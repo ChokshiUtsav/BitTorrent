@@ -45,6 +45,7 @@ purge section,mov,add,sub
 include 'bencode.asm'
 include 'tracker.asm'
 include 'percent.asm'
+include 'peer.asm'
 
 virtual at 0
         http_msg http_msg
@@ -325,6 +326,11 @@ proc torrent._.print_torrent _torrent
   .next_peer:
         jecxz   .peers_done
         stdcall torrent._.print_peer, edx
+
+
+        stdcall peer._.handshake,[_torrent],edx
+        
+
         add     edx, sizeof.peer
         dec     ecx
         jmp     .next_peer

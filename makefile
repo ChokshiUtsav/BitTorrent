@@ -16,3 +16,7 @@ run : clean all
 
 clean :
 	rm -f torrent.obj sample
+
+qemu_run:
+	$(QEMU) -L . -m 128 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:fat:$(HDA_PATH) -usbdevice tablet	
+
