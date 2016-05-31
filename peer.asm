@@ -18,12 +18,18 @@ proc peer._.handshake _torrent, _peer
 
 			mov		eax, [ebx+peer.ipv4]
 			mov		[sockaddr_peer.ip],eax
-
+			
 			;Preparing handshake message
 			lea		edi, [handshake_msg]
+			mov     eax, protocol_string_len
+			stosb 
 			lea		esi, [protocol_string]
-			mov		ecx, 29
+			mov		ecx, 19
 			rep     movsb
+			mov     eax, 0
+			mov     ecx, 8
+			rep     stosb
+
 			mov     ebx, [_torrent]
 			lea		esi, [ebx+torrent.info_hash]
 			mov     ecx, 20
@@ -31,9 +37,7 @@ proc peer._.handshake _torrent, _peer
 			lea     esi, [ebx+torrent.peer_id]
 			mov     ecx, 20
 			rep     movsb
-
-			DEBUGF 2, "INFO : Hanshake message : %s\n", handshake_msg
-
+			
 			;Opening a socket
 			mcall   socket, AF_INET4, SOCK_STREAM, 0
 			cmp     eax, -1
@@ -65,9 +69,44 @@ proc peer._.handshake _torrent, _peer
         	DEBUGF 3, "ERROR : Connection terminated.\n"
         	jmp		.error
 
-    @@:		;mov     esi, buffer
-    		;DEBUGF 2, "INFO : Message : %s\n", esi
-    		jmp 	.quit	
+    @@:		mov     edi, buffer
+    		DEBUGF 2, "INFO : Message : %s\n", edi
+
+    		;Verifying handshake response
+    		cmp		[edi]:1, protocol_string_len
+    		jne		.close
+    		lea		esi, [protocol_string]
+    		mov     ecx, protocol_string_len
+    		repe    cmpsb
+    		cmp     ecx, 0
+    		jne		.close
+    		mov     ecx, 0
+    .loop:	cmp     [edi]:1, 0
+    		jne 	.close
+    		inc 	edi
+    		inc     ecx
+    		cmp     ecx, 8
+    		je 		@f
+    		jmp     .loop
+    
+    @@:     mov     ebx, [_torrent]
+    		lea		esi, [ebx+torrent.info_hash]
+    		mov     ecx, 20
+    		repe    cmpsb
+    		cmp     ecx, 0
+    		jne     .close
+
+    		mov     ebx, [_peer]
+    		lea     esi, [ebx+peer.peer_id]
+    		mov     ecx, 20
+    		repe    cmpsb
+    		cmp     ecx, 0
+    		jne     .close
+    		DEBUGF 2, "INFO : Handshake message verfied.\n"
+    		jmp 	.quit
+
+    .close:	DEBUGF 2, "ERROR : Closing connection as verification failed"
+    		mcall	close, [socketnum]	
 
 	.error: DEBUGF 2, "INFO : Procedure ended with error.\n"
 			mov 	eax,-1
@@ -75,7 +114,8 @@ proc peer._.handshake _torrent, _peer
 		    ret
 
 	.quit:	DEBUGF 2, "INFO : Procedure ended successfully.\n"
-			mov		eax, 0
+			;mov		eax, socketnum
+			mov   	 eax, 0     
 			pop edi esi ecx edx ebx
 		    ret
 endp
@@ -94,16 +134,16 @@ sockaddr_peer:
         		rb 10
 		.length = $ - sockaddr_peer
 
-BUFFERSIZE      = 1500
-MSGLEN			= 69
+MSGLEN			= 68
 
 hello   		db 'Hello world!',0
 .length 		= $ - hello
 
-buffer          rb BUFFERSIZE
-.length			 = BUFFERSIZE
+buffer          rb MSGLEN
+.length			 = MSGLEN
 
-protocol_string	db '19BitTorrent protocol00000000'
+protocol_string_len db 19
+protocol_string		db 'BitTorrent protocol'
 
 handshake_msg	rb MSGLEN
 .length			=  MSGLEN
