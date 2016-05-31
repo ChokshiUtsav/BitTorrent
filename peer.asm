@@ -69,19 +69,21 @@ proc peer._.handshake _torrent, _peer
         	DEBUGF 3, "ERROR : Connection terminated.\n"
         	jmp		.error
 
-    @@:		mov     edi, buffer
+    @@:		lea     edi, [buffer]
     		DEBUGF 2, "INFO : Message : %s\n", edi
 
     		;Verifying handshake response
-    		cmp		[edi]:1, protocol_string_len
+    		mov     al, byte [edi]
+    		cmp		al, [protocol_string_len]
     		jne		.close
+    		inc     edi
     		lea		esi, [protocol_string]
     		mov     ecx, protocol_string_len
     		repe    cmpsb
     		cmp     ecx, 0
     		jne		.close
     		mov     ecx, 0
-    .loop:	cmp     [edi]:1, 0
+    .loop:	cmp     byte [edi], 0
     		jne 	.close
     		inc 	edi
     		inc     ecx
