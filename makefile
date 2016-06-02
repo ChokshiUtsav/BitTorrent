@@ -1,4 +1,4 @@
-QEMU=qemu
+QEMU=qemu-system-i386
 KOLIBRI_IMG_PATH=.
 HDA_PATH=.
 
@@ -11,8 +11,8 @@ sample: sample.asm torrent.inc
 	fasm $< $@
 
 run : clean all
-	  mcopy -vmoi $(KOLIBRI_IMG_PATH)/kolibri.img torrent.obj ::lib/torrent.obj
-	  $(QEMU) -L . -m 128 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:fat:$(HDA_PATH) -usbdevice tablet
+	mcopy -vmoi $(KOLIBRI_IMG_PATH)/kolibri.img torrent.obj ::lib/torrent.obj
+	$(QEMU) -L . -m 128 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:fat:$(HDA_PATH) -usbdevice tablet
 
 clean :
 	rm -f torrent.obj sample

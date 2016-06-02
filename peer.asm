@@ -54,23 +54,24 @@ proc peer._.handshake _torrent, _peer
 		    jmp		.error        	
 
 		    ;Sending handshake message to peer
-    @@:		mcall   send, [socketnum], handshake_msg, handshake_msg.length
-    		cmp		eax, -1
-    		jnz		@f
-    		DEBUGF 3, "ERROR: send %d\n",ebx
-    		jmp		.error
+    @@:		jmp		.quit
+    		;mcall   send, [socketnum], handshake_msg, handshake_msg.length
+    		;cmp		eax, -1
+    		;jnz		@f
+    		;DEBUGF 3, "ERROR: send %d\n",ebx
+    		;jmp		.error
 
-    @@:		DEBUGF 2, "INFO : Number of bytes copied : %d\n",eax
+    @@:		;DEBUGF 2, "INFO : Number of bytes copied : %d\n",eax
 
     		;receving response from peer
-    		mcall   recv, [socketnum], buffer, buffer.length, 0
-    		cmp     eax, -1
-        	jnz      @f
-        	DEBUGF 3, "ERROR : Connection terminated.\n"
-        	jmp		.error
+    		;mcall   recv, [socketnum], buffer, buffer.length, 0
+    		;cmp     eax, -1
+        	;jnz      @f
+        	;DEBUGF 3, "ERROR : Connection terminated.\n"
+        	;jmp		.error
 
-    @@:		lea     edi, [buffer]
-    		DEBUGF 2, "INFO : Message : %s\n", edi
+    @@:		lea     edi, [handshake_msg]
+    		;DEBUGF 2, "INFO : Message : %s\n", edi
 
     		;Verifying handshake response
     		mov     al, byte [edi]
