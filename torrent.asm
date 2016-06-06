@@ -462,7 +462,7 @@ mem.free        dd ?
 mem.realloc     dd ?
 dll.load        dd ?
 def_peer_id 	db '-KS0001-123456654321'     ;KS for KolibriOS
-def_port_num    dd 60001
+def_port_num    dd 6881
 fileinfo        dd 2, 0, 0
 final_size      dd 0
 final_buffer    dd 0

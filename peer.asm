@@ -46,7 +46,7 @@ proc peer._.handshake _torrent, _peer
 		    jmp		.error
 
 		    ;Connecting with peer
-	@@:		mov   	[socketnum], eax
+	@@:	    mov   	[socketnum], eax
 			mcall   connect, [socketnum], sockaddr_peer, sockaddr_peer.length
 			cmp		eax, -1
         	jnz     @f

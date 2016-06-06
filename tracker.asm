@@ -171,6 +171,7 @@ proc torrent._.tracker_fill_params _torrent, _tracker
             mov     eax, '=   '
             stosb
             stdcall torrent._.print_num, [ebx + torrent.left]
+            DEBUGF 2, "Torrent Left : %d\n",[ebx + torrent.left]
 
             ;Writing compact
             mov     eax, '&   '
