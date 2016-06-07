@@ -10,9 +10,9 @@ use32
         dd      0x01            ; header version
         dd      START           ; entry point
         dd      I_END           ; initialized size
-        dd      E_END   		    ; required memory
-        dd      E_END		        ; stack pointer
-        dd      0		            ; parameters
+        dd      E_END           ; required memory
+        dd      E_END           ; stack pointer
+        dd      0               ; parameters
         dd      cur_dir_path    ; path
 
 __DEBUG__       = 1
@@ -50,22 +50,6 @@ START:
       test    eax, eax
       jz    @f
       DEBUGF 3, "ERROR : Problem loading libraries.\n"
-      jmp     error
-
-      ;load boxlib  
-  @@: sys_load_library  boxlib_library_name, cur_dir_path, library_path, system_path_boxlib, \
-      err_message_found_boxlib, head_f_l_boxlib, boxlib_import, err_message_import_boxlib, head_f_i_boxlib
-      cmp     ax, -1
-      jnz     @f
-      DEBUGF  3, "ERROR: Problem loading boxlib.\n"
-      jmp     error
-
-      ;load proclib
-  @@: sys_load_library   proclib_library_name, cur_dir_path, library_path, system_path_proclib, \
-      err_message_found_proclib, head_f_l_proclib, proclib_import, err_message_import_proclib, head_f_i_proclib
-      cmp     ax, -1
-      jnz     @f
-      DEBUGF  3, "ERROR: Problem loading proclib.\n"
       jmp     error
 
      ;OpenDialog initialisation
@@ -204,9 +188,11 @@ copy_str:
 align 4
 @IMPORT:
 
-library				\
+library       \
         libini,  'libini.obj' , \
-        libio,   'libio.obj'
+        libio,   'libio.obj'  , \
+        proc_lib,'proc_lib.obj',\
+        box_lib, 'box_lib.obj'
 
 import libini                               , \
         ini.get_shortcut, 'ini_get_shortcut'
@@ -217,6 +203,16 @@ import libio                    , \
         file.open , 'file_open' , \
         file.read , 'file_read' , \
         file.close, 'file_close'
+
+import  proc_lib                            ,\
+        OpenDialog_Init  ,'OpenDialog_init' ,\
+        OpenDialog_Start ,'OpenDialog_start'
+
+import  box_lib                           ,\
+        edit_box_draw     ,'edit_box'     ,\
+        edit_box_key      ,'edit_box_key' ,\
+        edit_box_mouse    ,'edit_box_mouse'
+
 
 include_debug_strings
 
@@ -235,48 +231,6 @@ button_open_string       db 'Open File',0
 .length                  =  $ - button_open_string
 button_add_string        db 'Add Torrent',0
 .length                  =  $ - button_add_string
-
-;Data for loading BoxLib and ProcLib
-system_path_boxlib          db '/sys/lib/'
-boxlib_library_name         db 'box_lib.obj',0
-err_message_found_boxlib    db 'Sorry I cannot load library box_lib.obj',0
-head_f_i_boxlib:
-head_f_l_boxlib             db 'System error',0
-err_message_import_boxlib   db 'Error on load import library box_lib.obj',0
-
-system_path_proclib         db '/sys/lib/'
-proclib_library_name        db 'proc_lib.obj',0
-err_message_found_proclib   db 'Sorry I cannot load library proc_lib.obj',0
-head_f_i_proclib:
-head_f_l_proclib            db 'System error',0
-err_message_import_proclib  db 'Error on load import library proc_lib.obj',0
-
-
-boxlib_import:
-
-edit_box_draw           dd aEdit_box_draw
-edit_box_key            dd aEdit_box_key
-edit_box_mouse          dd aEdit_box_mouse
-version_ed              dd aVersion_ed
-                        dd 0
-                        dd 0
-aEdit_box_draw          db 'edit_box',0
-aEdit_box_key           db 'edit_box_key',0
-aEdit_box_mouse         db 'edit_box_mouse',0
-aVersion_ed             db 'version_ed',0
-
-
-proclib_import:
-
-OpenDialog_Init         dd aOpenDialog_Init
-OpenDialog_Start        dd aOpenDialog_Start
-OpenDialog__Version     dd aOpenDialog_Version
-                        dd 0
-                        dd 0
-aOpenDialog_Init        db 'OpenDialog_init',0
-aOpenDialog_Start       db 'OpenDialog_start',0
-aOpenDialog_Version     db 'Version_OpenDialog',0
-
 
 ;Data for edit box
 edit_torrent_path edit_box 200,10,10,0xffffff,0x6f9480,0,0xAABBCC,0,308,hed,mouse_dd,ed_focus,hed_end-hed-1,hed_end-hed-1
@@ -345,5 +299,5 @@ cur_dir_path            rb 4096
 library_path            rb 4096
 
 I_END:
-	rb 0x1000      				; stack
+  rb 0x1000             ; stack
 E_END:
