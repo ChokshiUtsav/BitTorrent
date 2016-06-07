@@ -120,20 +120,56 @@ draw_window:
 
       ;Drawing the window : xstart, xsize, ystart, ysize, work-area color, grab-area color, title
 
-      mcall     0, <300,350>, <300,300>, 0x34eeeeee, 0x80000000, window_title 
+      mcall     0, <100,600>, <100,600>, 0x34eeeeee, 0x80000000, window_title 
+
+      ;New Torrent Section Drawing
+      mov       ebx, 10 shl 16
+      mov       bx,  10
+      mcall     4,,0,label1_string,label1_string.length
+
+      mov       ebx, 20 shl 16
+      mov       bx,  33
+      mcall     4,,0,label2_string,label2_string.length
 
       push      dword edit_torrent_path
       call      [edit_box_draw]
 
-      mcall     8, <10,70>, <40,20>,[button_open_identifier], 0x00dddddd
-      mov       ebx, 15 shl 16
-      mov       bx,  44
+      mcall     8, <20,70>, <60,20>,[button_open_identifier], 0x00dddddd
+      mov       ebx, 25 shl 16
+      mov       bx,  64
       mcall     4,,0,button_open_string,button_open_string.length 
 
-      mcall     8, <90,70>, <40,20>,[button_add_identifier], 0x00dddddd
-      mov       ebx, 95 shl 16
-      mov       bx,  44
-      mcall     4,,0,button_add_string,button_add_string.length       
+      mcall     8, <110,80>, <60,20>,[button_add_identifier], 0x00dddddd
+      mov       ebx, 115 shl 16
+      mov       bx,  64
+      mcall     4,,0,button_add_string,button_add_string.length
+
+      mov       ebx, 1 shl 16
+      mov       bx,  100
+      mcall     4,,0,seperator_string,seperator_string.length
+
+      ;Existing Torrent Section Drawing
+      mov       ebx, 10 shl 16
+      mov       bx,  110
+      mcall     4,,0,label3_string,label3_string.length
+
+      mov       ebx, 1 shl 16
+      mov       bx,  250
+      mcall     4,,0,seperator_string,seperator_string.length
+  
+      ;Torrent Progress/Details Drawing
+      mov       ebx, 10 shl 16
+      mov       bx,  260
+      mcall     4,,0,label4_string,label4_string.length
+
+      mov       ebx, 1 shl 16
+      mov       bx,  410
+      mcall     4,,0,seperator_string,seperator_string.length
+
+      ;File List Drawing
+      mov       ebx, 10 shl 16
+      mov       bx,  420
+      mcall     4,,0,label5_string,label5_string.length
 
       mcall     12, 2       ;End of windowdraw
 
@@ -223,8 +259,24 @@ include_debug_strings
 ;Data for window
 window_title             db 'BitTorrent Clinet v1.0',0
 
-;Data for buttons
+;Data for labels
+label1_string            db 'New Torrent : ',0
+.length                  =  $-label1_string
+label2_string            db 'Path : ',0
+.length                  =  $-label2_string
+label3_string            db 'Existing Torrents : ',0
+.length                  =  $-label3_string
+label4_string            db 'Torrent Progress & Details : ',0
+.length                  =  $-label4_string
+label5_string            db 'File List : ',0
+.length                  =  $-label5_string
+seperator_string         db '------------------------------------------------------------------------------------------------------------------------------------------------------',0
+.length                  =  $-seperator_string
 
+
+
+
+;Data for buttons
 button_open_identifier   dd 5
 button_add_identifier    dd 6
 button_open_string       db 'Open File',0
@@ -233,7 +285,7 @@ button_add_string        db 'Add Torrent',0
 .length                  =  $ - button_add_string
 
 ;Data for edit box
-edit_torrent_path edit_box 200,10,10,0xffffff,0x6f9480,0,0xAABBCC,0,308,hed,mouse_dd,ed_focus,hed_end-hed-1,hed_end-hed-1
+edit_torrent_path edit_box 300,70,30,0xffffff,0x6f9480,0,0xAABBCC,0,308,hed,mouse_dd,ed_focus,hed_end-hed-1,hed_end-hed-1
 
 hed                     db 'Insert new torrent path here',0
 hed_end:
@@ -278,15 +330,8 @@ communication_area_default_pach:
 Filter:
                         dd Filter.end - Filter.1
   .1:
-                        db 'JPEG',0
+                        db 'TORRENT',0
                         db 'JPG',0
-                        db 'JPE',0
-                        db 'PNG',0
-                        db 'GIF',0
-                        db 'BMP',0
-                        db 'KEX',0
-                        db 'DAT',0
-                        db 'INI',0
 .end:
                         db 0
 

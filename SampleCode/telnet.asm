@@ -134,7 +134,6 @@ resolve:
 ; write result
         invoke  con_write_asciiz, eax
 ; free allocated memory
-        invoke  freeaddrinfo, esi
 
         invoke  con_write_asciiz, str9
 
