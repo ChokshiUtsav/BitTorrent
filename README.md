@@ -8,4 +8,5 @@ For running this code, you must have qemu setup properly.
 Use following command :
 > make run
 
-Run sample from /usbhd0/1 with debugboard opened.
+Run bittorrent_backend from /usbhd0/1 with debugboard opened.
+Run bittorrent_frontend from /usbhd0/1 for UI.
