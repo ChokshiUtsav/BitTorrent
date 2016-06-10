@@ -662,11 +662,11 @@ proc torrent._.bdecode_tracker_peers _torrent, _arg
         mov     [edi + peer.am_choking], al
         mov     [edi + peer.is_choking], al
         lodsd
-        bswap   eax
+        ;bswap   eax
         mov     [edi + peer.ipv4], eax
         xor     eax, eax
         lodsw
-;        xchg    al, ah
+        xchg    al, ah
         mov     [edi + peer.port], eax
         add     edi, sizeof.peer
         dec     ecx

@@ -180,7 +180,7 @@ proc torrent._.tracker_fill_params _torrent, _tracker
             stosd
             mov     eax, 'act='
             stosd
-            mov     eax, '0   '
+            mov     eax, '1   '
             stosb
 
             xor     eax, eax

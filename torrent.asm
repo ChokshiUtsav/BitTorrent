@@ -130,7 +130,8 @@ proc torrent.new _bt_new_type, _src
         	mov     esi, def_peer_id
         	mov     ecx, 20
         	rep 	movsb
-        	mov     [ebx + torrent.port], def_port_num
+            mov     eax, [def_port_num]
+        	mov     [ebx + torrent.port], eax 
 
         	cmp     [_bt_new_type], BT_NEW_FILE
         	jnz		.magnet
@@ -298,6 +299,42 @@ proc torrent._.print_num _num
         ret
 endp
 
+;Prints a number at location pointed by EDI
+proc torrent._.print_num_modified _num
+        push    ebx
+
+        DEBUGF 2,"INFO : In torrent._.print_num\n"
+        DEBUGF 2, "INFO : port number : %d",[_num]
+        xor     eax, eax
+        mov     ax, [_num]
+        DEBUGF 2, "INFO : port number : %d",[_num]
+        DEBUGF 2, "INFO : port number : %d",eax
+        mov     ebx, 10
+        xor     ecx, ecx
+
+    @@:
+        xor     edx, edx
+        div     ebx
+        push    edx
+        inc     ecx
+        test    eax, eax
+        jnz     @b
+
+    @@:
+        pop     eax
+        add     eax, '0'
+        stosb
+        dec     ecx
+        jnz     @b
+
+
+        DEBUGF 2,"INFO : Procedure ended successfully\n"
+        pop     ebx
+        ret
+endp
+
+
+
 ;Printing torrent details
 proc torrent._.print_torrent _torrent
         push    ebx esi edi
@@ -328,7 +365,7 @@ proc torrent._.print_torrent _torrent
         stdcall torrent._.print_peer, edx
 
 
-        stdcall peer._.handshake,[_torrent],edx
+        stdcall peer._.handshake, [_torrent], edx
         
 
         add     edx, sizeof.peer
@@ -366,7 +403,6 @@ proc torrent._.print_peer _peer
         DEBUGF 2,'  print peer at %x\n',[_peer]
         mov     ebx, [_peer]
         mov     eax, [ebx + peer.ipv4]
-;        DEBUGF 2,'    ipv4: %x\n',eax
         DEBUGF 2,'    ipv4: %u.%u.%u.%u\n', \
         [ebx + peer.ipv4 + 0]:1, [ebx + peer.ipv4 + 1]:1, \
         [ebx + peer.ipv4 + 2]:1, [ebx + peer.ipv4 + 3]:1
@@ -462,7 +498,7 @@ mem.free        dd ?
 mem.realloc     dd ?
 dll.load        dd ?
 def_peer_id 	db '-KS0001-123456654321'     ;KS for KolibriOS
-def_port_num    dd 6881
+def_port_num    dd 60001
 fileinfo        dd 2, 0, 0
 final_size      dd 0
 final_buffer    dd 0
