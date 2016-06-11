@@ -365,10 +365,13 @@ proc torrent._.print_torrent _torrent
         stdcall torrent._.print_peer, edx
 
 
-        stdcall peer._.handshake, [_torrent], edx
-        
+        stdcall     peer._.handshake, [_torrent], edx
+        cmp         eax,-1
+        je          @f 
+        stdcall     peer._.communicate, [_torrent], edx, eax
+        jmp         .peers_done
 
-        add     edx, sizeof.peer
+    @@: add     edx, sizeof.peer
         dec     ecx
         jmp     .next_peer
   .peers_done:

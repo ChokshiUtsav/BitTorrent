@@ -23,6 +23,7 @@ BT_PEER_MSG_BITFIELD       = 5
 BT_PEER_MSG_REQUEST        = 6
 BT_PEER_MSG_PIECE          = 7
 BT_PEER_MSG_CANCEL         = 8
+BT_PEER_MSG_EXTENDED       = 20
 
 BT_NEW_FILE   = 0
 BT_NEW_MAGNET = 1
@@ -72,6 +73,7 @@ struct peer
         is_interested   db ?
         protocol        db ?
         last_seen       dd ?
+        bit_field       dd ?
 ends
 
 struct torrent
@@ -101,3 +103,7 @@ struct torrent
         proc_info       process_information
 ends
 
+struct bit_field
+        size            dd ?
+        bytes           rb 1024
+ends
