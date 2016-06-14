@@ -31,7 +31,11 @@ include 'debug-fdo.inc'
 include 'dll.inc'
 include 'box_lib.mac'
 include 'load_lib.mac'
+include 'optionbox.inc'
 @use_library              ;use load lib macros
+version_op
+use_option_box
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;Code Area;;;;;;;;;;;;;;;;;;;
@@ -56,8 +60,11 @@ START:
   @@: push    dword OpenDialog_data
       call    [OpenDialog_Init]
 
+      ;Setting mask
+      mcall   40, 0x25
+
       ;drawing window and main event loop
-  @@: call    draw_window      
+      call    draw_window      
 
   event_wait:
         mcall   10
@@ -71,7 +78,12 @@ START:
         cmp     eax, 3
         jz      .button
 
+        mouse_option_boxes option_boxes,option_boxes_end
+
         push    dword edit_torrent_path
+        call    [edit_box_mouse]
+
+        push    dword edit_download_path
         call    [edit_box_mouse]
 
         jmp     event_wait
@@ -122,55 +134,47 @@ draw_window:
 
       mcall     0, <100,600>, <100,600>, 0x34eeeeee, 0x80000000, window_title 
 
-      ;New Torrent Section Drawing
-      mov       ebx, 10 shl 16
-      mov       bx,  10
-      mcall     4,,0,label1_string,label1_string.length
-
-      mov       ebx, 20 shl 16
-      mov       bx,  33
-      mcall     4,,0,label2_string,label2_string.length
+      ;SECTION 1 : New Torrent Section Drawing
+      mcall     4,  <10,10>,0xB0000000,label11_string
+      mcall     13, <12,560>, <27,80>, 0x005080DD
+      
+      mcall     4,  <20,35>,0x00FFFFFF,label12_string
+      mcall     4,  <20,55>,0x00FFFFFF,label13_string
 
       push      dword edit_torrent_path
       call      [edit_box_draw]
+      push      dword edit_download_path
+      call      [edit_box_draw]
 
-      mcall     8, <20,70>, <60,20>,[button_open_identifier], 0x00dddddd
-      mov       ebx, 25 shl 16
-      mov       bx,  64
-      mcall     4,,0,button_open_string,button_open_string.length 
+      mcall     8, <450,70>, <35,15>,[button_openfile_identifier], 0x007887A6
+      mcall     4, <455,39>,0x00FFFFFF,button_openfile_string 
 
-      mcall     8, <110,80>, <60,20>,[button_add_identifier], 0x00dddddd
-      mov       ebx, 115 shl 16
-      mov       bx,  64
-      mcall     4,,0,button_add_string,button_add_string.length
+      mcall     8, <450,80>, <55,15>,[button_openfolder_identifier], 0x007887A6
+      mcall     4, <455,59>,0x00FFFFFF,button_openfolder_string 
 
-      mov       ebx, 1 shl 16
-      mov       bx,  100
-      mcall     4,,0,seperator_string,seperator_string.length
 
-      ;Existing Torrent Section Drawing
-      mov       ebx, 10 shl 16
-      mov       bx,  110
-      mcall     4,,0,label3_string,label3_string.length
+      mcall     8, <20,80>, <80,20>,[button_addtorrent_identifier], 0x007887A6
+      mcall     4, <25,84>,0x00FFFFFF,button_addtorrent_string
 
-      mov       ebx, 1 shl 16
-      mov       bx,  250
-      mcall     4,,0,seperator_string,seperator_string.length
+      ;SECTION 2 : Existing Torrent Section Drawing
+      mcall     4,  <10,120>,0xB0000000,label21_string
+      mcall     13, <12,560>, <137,250>, 0x005080DD
+      draw_option_boxes option_boxes,option_boxes_end
+
+      mcall     8, <20,90>, <350,20>,[button_showtorrent_identifier], 0x007887A6
+      mcall     4, <25,354>,0x00FFFFFF,button_showtorrent_string
+
+      mcall     8, <140,130>, <350,20>,[button_starttorrent_identifier], 0x007887A6
+      mcall     4, <145,354>,0x00FFFFFF,button_starttorrent_string
+
+      mcall     8, <290,110>, <350,20>,[button_removetorrent_identifier], 0x007887A6
+      mcall     4, <295,354>,0x00FFFFFF,button_removetorrent_string
+
   
-      ;Torrent Progress/Details Drawing
-      mov       ebx, 10 shl 16
-      mov       bx,  260
-      mcall     4,,0,label4_string,label4_string.length
-
-      mov       ebx, 1 shl 16
-      mov       bx,  410
-      mcall     4,,0,seperator_string,seperator_string.length
-
-      ;File List Drawing
-      mov       ebx, 10 shl 16
-      mov       bx,  420
-      mcall     4,,0,label5_string,label5_string.length
-
+      ;SECTION 3 : Torrent Progress/Details Drawing
+      mcall     4,  <10,400>, 0xB0000000,label31_string
+      mcall     13, <12,560>, <417,150>, 0x005080DD
+   
       mcall     12, 2       ;End of windowdraw
 
       ret
@@ -260,38 +264,56 @@ include_debug_strings
 window_title             db 'BitTorrent Clinet v1.0',0
 
 ;Data for labels
-label1_string            db 'New Torrent : ',0
-.length                  =  $-label1_string
-label2_string            db 'Path : ',0
-.length                  =  $-label2_string
-label3_string            db 'Existing Torrents : ',0
-.length                  =  $-label3_string
-label4_string            db 'Torrent Progress & Details : ',0
-.length                  =  $-label4_string
-label5_string            db 'File List : ',0
-.length                  =  $-label5_string
-seperator_string         db '------------------------------------------------------------------------------------------------------------------------------------------------------',0
-.length                  =  $-seperator_string
-
-
-
+label11_string           db 'New Torrent : ',0
+label12_string           db 'Torrent File : ',0
+label13_string           db 'Download Location : ',0
+label21_string           db 'Existing Torrents : ',0
+label31_string           db 'Torrent Progress/Details : ',0
 
 ;Data for buttons
-button_open_identifier   dd 5
-button_add_identifier    dd 6
-button_open_string       db 'Open File',0
-.length                  =  $ - button_open_string
-button_add_string        db 'Add Torrent',0
-.length                  =  $ - button_add_string
+button_openfile_identifier      dd 5
+button_openfolder_identifier    dd 6
+button_addtorrent_identifier    dd 7
+button_showtorrent_identifier   dd 8
+button_starttorrent_identifier  dd 9
+button_removetorrent_identifier dd 10
+button_openfile_string          db 'Open File',0
+button_openfolder_string        db 'Open Folder',0
+button_addtorrent_string        db 'Add Torrent',0
+button_showtorrent_string       db 'Show Torrent',0
+button_starttorrent_string      db 'Start/Pause Torrent',0
+button_removetorrent_string     db 'Remove Torrent',0
+
+
 
 ;Data for edit box
-edit_torrent_path edit_box 300,70,30,0xffffff,0x6f9480,0,0xAABBCC,0,308,hed,mouse_dd,ed_focus,hed_end-hed-1,hed_end-hed-1
+edit_torrent_path edit_box 300,135,33,0xffffff,0x6f9480,0,0xAABBCC,0,308,hed,mouse_dd,ed_focus,hed_end-hed-1,hed_end-hed-1
 
-hed                     db 'Insert new torrent path here',0
+edit_download_path edit_box 300,135,53,0xffffff,0x6f9480,0,0xAABBCC,0,308,hed,mouse_dd,ed_focus,hed_end-hed-1,hed_end-hed-1
+
+hed                     db 'Insert path here',0
 hed_end:
 
 mouse_dd                rd 1
 p_info                  process_information
+
+;Data for optionbox (radiobuttons)
+option_boxes:
+op1 option_box option_group1,20,145,0xFFFFFF,0,0xFFFFFF,op_text.1,op_text.e1-op_text.1
+op2 option_box option_group1,20,160,0xFFFFFF,0,0xFFFFFF,op_text.2,op_text.e2-op_text.2
+op3 option_box option_group1,20,175,0xFFFFFF,0,0xFFFFFF,op_text.3,op_text.e3-op_text.3
+
+option_boxes_end:
+
+op_text:
+.1 db 'Torrent #1' 
+.e1:
+.2 db 'Torrent #2'
+.e2:
+.3 db 'Torrent #3'
+.e3:
+
+option_group1 dd op1
 
 ;Data for open dialog
 OpenDialog_data:
@@ -331,7 +353,7 @@ Filter:
                         dd Filter.end - Filter.1
   .1:
                         db 'TORRENT',0
-                        db 'JPG',0
+                        db 'DIR',0
 .end:
                         db 0
 
