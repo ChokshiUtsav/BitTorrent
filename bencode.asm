@@ -444,27 +444,33 @@ DEBUGF 2,'list\n'
         jz      @f
         DEBUGF 3,'ERROR: bad type\n'
         jmp     .error
-    @@:
+    @@: 
+        ;stores count of pieces
         mov     ebx, [_torrent]
         stdcall torrent._.bdecode_readnum
         xor     edx, edx
         mov     edi, 20
-        mov     ecx, eax
         div     edi
         mov     [ebx + torrent.pieces_cnt], eax
+        
+        ;allocates memory : (pieces_cnt*sizeof.piece)
+        xor     edx, edx
+        mov     ecx, sizeof.piece 
+        mul     ecx
         push    ecx
-        invoke  mem.alloc, ecx
+        invoke  mem.alloc, eax
         pop     ecx
         test    eax, eax
         jnz     @f
         DEBUGF 3,'ERROR: bdecode_pieces alloc\n'
         jmp     .error
+
     @@:
+        ;fills piece structure
         mov     [ebx + torrent.pieces], eax
-        mov     edi, eax
-        shr     ecx, 2
-        rep     movsd
+        stdcall piece._.fill_all_pieces, _torrent, eax
         jmp     .quit
+
   .error:
   .quit:
         pop     edi ebx
