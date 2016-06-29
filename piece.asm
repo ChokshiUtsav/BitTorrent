@@ -19,12 +19,12 @@
 ;fills array of pieces
 proc piece._.fill_all_pieces _torrent, _pieces
 	
-			push 		eax, ebx, ecx, edx, edi
+			push 		eax ebx ecx edx edi
 
 			mov 		ebx, [_torrent]
-			mov			ecx, [ebx+torrent.piece_cnt]
+			mov			ecx, [ebx+torrent.pieces_cnt]
 
-			;Few intialization
+			;Intialization
 			mov			[piece_index], 0
 			mov			[cur_file_index], 0
 			mov			[cur_file_offset],0
@@ -34,41 +34,42 @@ proc piece._.fill_all_pieces _torrent, _pieces
 			pop         esi
 			mov			[cur_file_rem_size], eax
 
-
-	.loop	cmp 		ecx, [piece_index]
+	.loop:	
+			cmp 		[piece_index], ecx
 			je			.quit
-			stdcall		piece._.fill_piece, _torrent, _pieces
-			dec 	ecx
-			jmp		.loop
+			stdcall		piece._.fill_piece, [_torrent], [_pieces]
+			dec 		ecx
+			jmp			.loop
 
-	.error:
+	.error:	
 
-	.quit:
-			pop     edi, edx, ecx, ebx, eax
+	.quit:	
+			pop     edi edx ecx ebx eax
 			ret
 endp
 
 ;fills a single piece
 proc piece._.fill_piece _torrent, _pieces
-			
-			push 		eax, ebx, ecx, edx, edi
+			push 		eax ebx ecx edx edi
 
-			;Few initializations
+			;Initializations
 			mov        [num_offsets], 0
 			mov        [cur_piece_offset], 0
 			mov        ebx, [_torrent]
-			mov        [cur_piece_rem_size], [ebx+torrent.piece_length]
+			mov        eax, [ebx+torrent.piece_length]
+			mov        [cur_piece_rem_size], eax
 
-			;go to correct location in array of piece
+			;go to correct location in array of pieces
 			mov			ebx, [piece_index]
 			imul		ebx, sizeof.piece
 			add			ebx, [_pieces]
 
 			;index
-			mov         [ebx+piece.index],[piece_index]
+			mov         eax, [piece_index]
+			mov         [ebx+piece.index],eax
 
 			;hash
-			mov         edi, [ebx+piece.piece_hash]
+			lea         edi, [ebx+piece.piece_hash]
 			mov			ecx, 20
 			rep         movsb
 
@@ -85,30 +86,31 @@ proc piece._.fill_piece _torrent, _pieces
 			imul       ecx, 4
 
 			;piece_offset
-			mov        edi, [ebx+piece.piece_offset]
-			add        edi, ecx
-			mov        eax, [cur_piece_offset]
+			lea       edi, [ebx+piece.piece_offset]
+			add       edi, ecx
+			mov       eax, [cur_piece_offset]
 			stosd
 
 			;file_offset
-			mov        edi, [ebx+piece.file_offset]
+			lea        edi, [ebx+piece.file_offset]
 			add        edi, ecx
 			mov        eax, [cur_file_offset]
 			stosd
 
 			;file_index
-			mov        edi, [ebx+piece.file_index]
+			lea        edi, [ebx+piece.file_index]
 			add        edi, ecx
 			mov        eax, [cur_file_index]
 			stosd
 
-			cmp        [cur_piece_rem_size], [cur_file_rem_size]
+			mov        eax, [cur_file_rem_size]
+			cmp        [cur_piece_rem_size], eax
 			ja			.nextfile
 
 	.samefile:
 
 			;length
-			mov        edi, [ebx+piece.length]
+			lea        edi, [ebx+piece.length]
 			add        edi, ecx
 			mov        eax, [cur_piece_rem_size]
 			stosd
@@ -127,9 +129,8 @@ proc piece._.fill_piece _torrent, _pieces
  			
 
 	.nextfile:
-
 			;length
-			mov        edi, [ebx+piece.length]
+			lea        edi, [ebx+piece.length]
 			add        edi, ecx
 			mov        eax, [cur_file_rem_size]
 			stosd
@@ -142,6 +143,7 @@ proc piece._.fill_piece _torrent, _pieces
 			mov        [cur_file_offset], 0
 			inc        [cur_file_index]
 
+			;check any file left ? -> cur_file_index == files_cnt ?
 			push       ebx
 			mov        ebx, [_torrent]
 			mov        eax, [ebx+torrent.files_cnt]
@@ -157,7 +159,7 @@ proc piece._.fill_piece _torrent, _pieces
 			imul       esi, 0x1000           
 			add		   esi, [ebx+torrent.files]
 			lodsd
-			pop        esi, ebx
+			pop        esi ebx
 			mov		   [cur_file_rem_size], eax
 			inc        [num_offsets]
 			jmp        .loop
@@ -165,20 +167,18 @@ proc piece._.fill_piece _torrent, _pieces
 	.error:
 
 	.quit:
-			pop     edi, edx, ecx, ebx, eax
-			ret
-
+			pop     edi edx ecx ebx eax
+			ret			
 endp
 
 ;reads a single piece from secondary memory to primary memory
 proc piece._.get_piece _torrent, _index
 	
-	
-
 endp
 
 ;writes a single piece from primary memory to secondary memory
 proc piece._.set_piece
+
 endp
 
 ;generates hash of piece-data
