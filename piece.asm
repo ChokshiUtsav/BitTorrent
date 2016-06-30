@@ -19,7 +19,7 @@
 ;fills array of pieces
 proc piece._.fill_all_pieces _torrent, _pieces
 	
-			push 		eax ebx ecx edx edi
+			push 		ebx ecx edx edi
 
 			mov 		ebx, [_torrent]
 			mov			ecx, [ebx+torrent.pieces_cnt]
@@ -38,19 +38,21 @@ proc piece._.fill_all_pieces _torrent, _pieces
 			cmp 		[piece_index], ecx
 			je			.quit
 			stdcall		piece._.fill_piece, [_torrent], [_pieces]
-			dec 		ecx
+			inc         [piece_index]
 			jmp			.loop
 
-	.error:	
+	.error:	mov    eax, -1
+			pop     edi edx ecx ebx
+			ret
 
-	.quit:	
-			pop     edi edx ecx ebx eax
+	.quit:	mov     eax, 0
+			pop     edi edx ecx ebx
 			ret
 endp
 
 ;fills a single piece
 proc piece._.fill_piece _torrent, _pieces
-			push 		eax ebx ecx edx edi
+			push 		ebx ecx edx edi
 
 			;Initializations
 			mov        [num_offsets], 0
@@ -77,7 +79,7 @@ proc piece._.fill_piece _torrent, _pieces
 			mov        [ebx+piece.download_status], BT_PIECE_DOWNLOAD_NOT_STARTED
 
 			;number of blocks downloaded
-			mov        [ebx+piece.num_blocks_downloaded], 0x0000
+			mov        [ebx+piece.num_blocks_downloaded], 0
 
 	.loop:
 			cmp        [cur_piece_rem_size], 0
@@ -164,10 +166,14 @@ proc piece._.fill_piece _torrent, _pieces
 			inc        [num_offsets]
 			jmp        .loop
 
-	.error:
+	.error:	mov     eax, -1
+			pop     edi edx ecx ebx
+			ret
 
-	.quit:
-			pop     edi edx ecx ebx eax
+	.quit:	mov         eax, [num_offsets]
+			mov         [ebx+piece.num_offsets],eax
+			mov     	eax, 0
+			pop     	edi edx ecx ebx
 			ret			
 endp
 

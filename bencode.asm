@@ -468,7 +468,33 @@ DEBUGF 2,'list\n'
     @@:
         ;fills piece structure
         mov     [ebx + torrent.pieces], eax
-        stdcall piece._.fill_all_pieces, _torrent, eax
+        stdcall piece._.fill_all_pieces, [_torrent], eax
+        
+        ;print first piece
+        mov     eax, [ebx + torrent.pieces]
+        DEBUGF 2, "Index : %d\n", [eax+piece.index]
+        DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
+        DEBUGF 2, "Download Status : %d\n", [eax+piece.download_status]
+        DEBUGF 2, "Blocks downloaded : %d\n", [eax+piece.num_blocks_downloaded]
+        DEBUGF 2, "Number of offsets : %d\n", [eax+piece.num_offsets]
+        DEBUGF 2, "Piece Offset : %d\n", [eax+piece.piece_offset]
+        DEBUGF 2, "Length : %d\n", [eax+piece.length]
+        DEBUGF 2, "File Offset : %d\n", [eax+piece.file_offset]
+        DEBUGF 2, "File Index : %d\n", [eax+piece.file_index]
+        ;print last piece
+        mov    ecx, [ebx+torrent.pieces_cnt]
+        dec    ecx
+        imul   ecx, sizeof.piece
+        add    eax, ecx
+        DEBUGF 2, "Index : %d\n", [eax+piece.index]
+        DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
+        DEBUGF 2, "Download Status : %d\n", [eax+piece.download_status]
+        DEBUGF 2, "Blocks downloaded : %d\n", [eax+piece.num_blocks_downloaded]
+        DEBUGF 2, "Number of offsets : %d\n", [eax+piece.num_offsets]
+        DEBUGF 2, "Piece Offset : %d\n", [eax+piece.piece_offset]
+        DEBUGF 2, "Length : %d\n", [eax+piece.length]
+        DEBUGF 2, "File Offset : %d\n", [eax+piece.file_offset]
+        DEBUGF 2, "File Index : %d\n", [eax+piece.file_index]
         jmp     .quit
 
   .error:
