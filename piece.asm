@@ -1,4 +1,4 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -7,10 +7,16 @@
 ;These methods are useful as part of pre-processing and post-processing and do not confront any network related operations.
 
 ;A piece is chunk of torrent data which can be verified against hash provided in torrent file
-;Usually pieces are of size 512kB
+;Usually pieces are of size 256kB
 ;But piece may range from 256kB to 1024kB depending on total size of torrent.
 
 ;Structure for "piece" can be found in torrent.inc
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;; Assumptions ;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Files from which piece to be read or written are already created.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; Procedure Area;;;;;;;;;;;;;;;;;
@@ -177,28 +183,187 @@ proc piece._.fill_piece _torrent, _pieces
 			ret			
 endp
 
-;reads a single piece from secondary memory to primary memory
-proc piece._.get_piece _torrent, _index
-	
+;reads a single piece from file(s) to memory
+proc piece._.get_piece _torrent, _index, _data
+
+			push		ebx ecx edx edi esi
+
+			mov         ebx, [_index]
+			imul        ebx, sizeof.piece
+			mov         eax, [_torrent]
+			add         ebx, [eax+torrent.pieces]
+
+			;Initializations
+			mov         [num_offsets], 0
+			lea         edi, [_data]
+
+	.loop:  mov         ecx, [ebx+piece.num_offsets]
+			cmp         ecx, [num_offsets]
+			je          .quit
+
+			mov         ecx, [num_offsets]
+			imul		ecx, 4
+			
+			;getting number of bytes to read from the file
+			lea         esi, [ebx+piece.length]
+			add         esi, ecx
+			lodsd
+			mov         [num_bytes], eax
+
+			;getting file-offset
+			lea         esi, [ebx+piece.file_offset]
+			add         esi, ecx
+			lodsd
+			mov         [cur_file_offset], eax
+
+			;getting file-index
+			lea         esi, [ebx+piece.file_index]
+			add         esi, ecx
+			lodsd
+			mov         [cur_file_index], eax
+
+			;getting file-name
+			mov         eax, [_torrent]
+			mov        	esi, [cur_file_index]
+			imul       	esi, 0x1000
+			add         esi, 4           
+			add		    esi, [eax+torrent.files]
+
+			;open file for reading
+			invoke  	file.open, esi, O_READ
+    		or      	eax, eax
+    		jnz     	@f
+    		DEBUGF 2, "ERROR : Problem opening file for write\n"
+    		jmp     	.error
+
+
+    		;set file pointer to offset from position 0(SEEK_SET)
+    	@@: mov     	[filedesc], eax
+    		invoke  	file.seek, [filedesc], [cur_file_offset], SEEK_SET
+    		inc     	eax
+    		jnz     	@f
+    		DEBUGF 2, "ERROR : Problem with file seek\n"
+    		jmp    	    .error
+
+    		;read from file to data
+    	@@:	invoke 		file.read, [filedesc], edi, [num_bytes]
+    		inc     	eax
+    		jnz     	@f
+    		DEBUGF 2, "ERROR : Problem with file write\n"
+    		jmp     	.error
+
+    	@@:	invoke  	file.close, [filedesc]
+    		add 		edi, [num_bytes]
+    		inc         [num_offsets]
+    		jmp			.loop	
+
+	.error:	cmp         [filedesc], 0
+			jz           @f
+			invoke  	file.close, [filedesc]
+		@@:	mov         eax, -1
+			pop         esi edi edx ecx ebx
+			ret
+
+	.quit:
+			pop         esi edi edx ecx ebx
+			ret
 endp
 
-;writes a single piece from primary memory to secondary memory
-proc piece._.set_piece
 
+;writes a single piece from memory to file(s)
+proc piece._.set_piece	_torrent, _index, _data
+	
+			push		ebx ecx edx edi esi
+
+			mov         ebx, [_index]
+			imul        ebx, sizeof.piece
+			mov         eax, [_torrent]
+			add         ebx, [eax+torrent.pieces]
+
+			;Initializations
+			mov         [num_offsets], 0
+			lea         edi, [_data]
+
+	.loop:  mov         ecx, [ebx+piece.num_offsets]
+			cmp         ecx, [num_offsets]
+			je          .quit
+
+			mov         ecx, [num_offsets]
+			imul		ecx, 4
+			
+			;getting number of bytes to write to the file
+			lea         esi, [ebx+piece.length]
+			add         esi, ecx
+			lodsd
+			mov         [num_bytes], eax
+
+			;getting file-offset
+			lea         esi, [ebx+piece.file_offset]
+			add         esi, ecx
+			lodsd
+			mov         [cur_file_offset], eax
+
+			;getting file-index
+			lea         esi, [ebx+piece.file_index]
+			add         esi, ecx
+			lodsd
+			mov         [cur_file_index], eax
+
+			;getting file-name
+			mov         eax, [_torrent]
+			mov        	esi, [cur_file_index]
+			imul       	esi, 0x1000
+			add         esi, 4           
+			add		    esi, [eax+torrent.files]
+
+			;open file for writing
+			invoke  	file.open, esi, O_WRITE
+    		or      	eax, eax
+    		jnz     	@f
+    		DEBUGF 2, "ERROR : Problem opening file for write\n"
+    		jmp     	.error
+
+    		;set file pointer to offset from position 0(SEEK_SET)
+    	@@: mov     	[filedesc], eax
+    		invoke  	file.seek, [filedesc], [cur_file_offset], SEEK_SET
+    		inc     	eax
+    		jnz     	@f
+    		DEBUGF 2, "ERROR : Problem with file seek\n"
+    		jmp    	    .error
+
+    		;write to file from data
+    	@@:	invoke 		file.write, [filedesc], edi, [num_bytes]
+    		inc     	eax
+    		jnz     	@f
+    		DEBUGF 2, "ERROR : Problem with file write\n"
+    		jmp     	.error
+
+    	@@:	invoke  	file.close, [filedesc]
+    		add 		edi, [num_bytes]
+    		inc         [num_offsets]
+    		jmp			.loop	
+
+	.error:	cmp         [filedesc], 0
+			jz           @f
+			invoke  	file.close, [filedesc]
+		@@:	mov         eax, -1
+			pop         esi edi edx ecx ebx
+			ret
+
+	.quit:
+			pop         esi edi edx ecx ebx
+			ret
 endp
 
 ;generates hash of piece-data
-proc piece._.generate_hash
+proc piece._.generate_hash _data, _hash
+
 endp
 
 ;verifies hash of piece-data against original hash
-proc piece._.verify_hash
-endp
+proc piece._.verify_hash _torrent, _index, _hash
 
-;gets hash of piece stored in piece structure
-proc piece._.get_hash_of_piece
 endp
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; Data Area;;;;;;;;;;;;;;;;;;;;;;
@@ -211,4 +376,7 @@ cur_piece_offset		dd 	?
 cur_piece_rem_size		dd  ?
 num_offsets				dd  ?
 piece_index         	dd  ?
+num_bytes 				dd  ?
 file_array_elemet_size  =  0x1000
+filename                rb 0x1000
+filedesc               	dd  0

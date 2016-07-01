@@ -469,8 +469,9 @@ DEBUGF 2,'list\n'
         ;fills piece structure
         mov     [ebx + torrent.pieces], eax
         stdcall piece._.fill_all_pieces, [_torrent], eax
-        
+
         ;print first piece
+        DEBUGF 2, "First Piece\n"
         mov     eax, [ebx + torrent.pieces]
         DEBUGF 2, "Index : %d\n", [eax+piece.index]
         DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
@@ -481,7 +482,9 @@ DEBUGF 2,'list\n'
         DEBUGF 2, "Length : %d\n", [eax+piece.length]
         DEBUGF 2, "File Offset : %d\n", [eax+piece.file_offset]
         DEBUGF 2, "File Index : %d\n", [eax+piece.file_index]
+        
         ;print last piece
+        DEBUGF 2, "Last Piece\n"
         mov    ecx, [ebx+torrent.pieces_cnt]
         dec    ecx
         imul   ecx, sizeof.piece
@@ -495,6 +498,9 @@ DEBUGF 2,'list\n'
         DEBUGF 2, "Length : %d\n", [eax+piece.length]
         DEBUGF 2, "File Offset : %d\n", [eax+piece.file_offset]
         DEBUGF 2, "File Index : %d\n", [eax+piece.file_index]
+
+        ;stdcall piece._.set_piece, [_torrent], 1, 
+
         jmp     .quit
 
   .error:
@@ -757,3 +763,5 @@ db 0
 
 keys_tracker_response_peers:
 db 0
+
+
