@@ -56,6 +56,7 @@ START:
 		    jmp     .error
 
 
+		    ;Start listening on port 50000 for incoming requests from frontend
 	@@: 	mcall   40, EVM_STACK
 
 			mcall   socket, AF_INET4, SOCK_STREAM, 0
@@ -63,7 +64,7 @@ START:
         	je      .sock_err
         	mov     [socketnum], eax
 
-        	mcall   bind, [socketnum], sockaddr1, sockaddr1.length
+        	mcall   bind, [socketnum], sockaddr, sockaddr.length
         	cmp     eax, -1
         	je      .bind_err
 
@@ -71,13 +72,19 @@ START:
         	cmp     eax, -1
         	je      .listen_err
 
-    .accept:    	
-    		mcall   accept, [socketnum], sockaddr1, sockaddr1.length
+    .accept_connection:
+    		DEBUGF 2, "INFO : Listening for incoming connection\n"    	
+    		mcall   accept, [socketnum], sockaddr, sockaddr.length
         	cmp     eax, -1
-        	je      .acpt_err
+        	je      .accept_err
         	mov     [socketnum2], eax
 
-        	mcall   send, [socketnum2], handhshake, handshake_msg.length
+
+        	DEBUGF 2, "INFO : Connection accepted\n"
+        	mcall   send, [socketnum2], handshake_msg, handshake_msg.length
+        	mcall	close, [socketnum2]
+        	DEBUGF 2, "INFO : Connection closed\n"
+	        jmp		.accept_connection
 
   	.loop:
         	mcall   recv, [socketnum2], buffer, buffer.length, 0
@@ -111,40 +118,28 @@ START:
         	je		.torrent_quit
 
     .torrent_add:
-    		inc 	esi
-    		mov     eax, dword [esi]
-    		mov     [torrent_id], eax
-    		add     esi, 4
-
-    		lea     edi, [torrent_filename]
-    		rep     movsb
-
-    		;Add new torrent
-	@@:	    DEBUGF 2, "INFO : Calling torrent.new\n"
-		    invoke 	torrent.new, BT_NEW_FILE, torrent_filename1 
-		    cmp 	eax, -1
-		    jnz		@f
-		    DEBUGF 3, "ERROR : Problem with torrent.new\n"
-		    jmp		.error 
-
-	@@:	    DEBUGF 2, "INFO : Successfully returned from torrent.new\n"
-            DEBUGF 2, "INFO : Calling torrent.start\n"
-            invoke  torrent.start, eax
-            cmp     eax, -1
-            jnz     @f
-            DEBUGF 3, "ERROR : Problem with torrent.start\n"
-            jmp     .error            
-
-    @@:     DEBUGF 2, "INFO : Successfully returned from torrent.start\n"
-		    jmp 	.exit
-
-	        ;close connection
 	        mcall	close, [socketnum2]
-	        
+	        jmp		.accept_connection
 
-    	    ;move onto accepting further requests
+	.torrent_start:
+			mcall	close, [socketnum2]
+			jmp		.accept_connection
 
+	.torrent_pause:
+			mcall	close, [socketnum2]
+			jmp		.accept_connection
 
+	.torrent_remove:
+			mcall	close, [socketnum2]
+			jmp		.accept_connection
+
+	.torrent_show:
+			mcall	close, [socketnum2]
+			jmp		.accept_connection
+
+	.torrent_quit:
+			mcall	close, [socketnum2]
+			jmp		.accept_connection
 
 	.sock_err:
 			DEBUGF 3, "ERROR : Could not open socket.\n"
@@ -199,12 +194,12 @@ include_debug_strings
 ;;;;;;;;;;;;;Data Area;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-sockaddr1:
+sockaddr:
         		dw AF_INET4
 		.port   dw 0x50C3             ; port 50000 = 0xC350 -in network byte order
 		.ip     dd 0
         		rb 10
-		.length = $ - sockaddr1
+		.length = $ - sockaddr
 
 handshake_msg	db 'Kolibrios_Bittorrent_Client',0
 .length			=  $ - handshake_msg

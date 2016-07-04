@@ -39,6 +39,10 @@ BT_PEER_STATE_OFFLINE      = 1
 BT_PEER_STATE_DISCONNECTED = 2
 BT_PEER_STATE_CONNECTED    = 3
 
+BT_PIECE_DOWNLOAD_NOT_STARTED = 0
+BT_PIECE_DOWNLOAD_IN_PROGRESS = 1
+BT_PIECE_DOWNLOAD_COMPLETE    = 2
+
 struct ipc_buffer
         locked   dd ?
         occupied dd ?
@@ -76,16 +80,29 @@ struct peer
         bit_field       dd ?
 ends
 
+;Requires approximately 2kB
+struct piece
+        index                   dd ?                    
+        piece_hash              rb 20                   
+        download_status         dd ?                    
+        num_blocks_downloaded   dd ?                    
+        num_offsets             dd ? ;array_size        
+        piece_offset            rb 0x0200  ;array       
+        length                  rb 0x0200  ;array
+        file_offset             rb 0x0200  ;array
+        file_index              rb 0x0200  ;array
+ends
+
 struct torrent
         trackers_cnt    dd ?
         trackers        dd ?    ; array
         peers_cnt       dd ?
         peers           dd ?
         pieces_cnt      dd ?
-        pieces          dd ?
+        pieces          dd ?    ;array
         piece_length    dd ?
         files_cnt       dd ?
-        files           dd ?
+        files           dd ?    ;array
         info            dd ?
         info_hash       rb 20   ; sha1 length
         peer_id         rb 20

@@ -102,16 +102,23 @@ START:
         cmp     ah, 1
         je      exit
         cmp     ah, 5
-        je      .open_button
+        je      .openfile_button
         cmp     ah, 6
+        je      .openfolder_button
+        cmp     ah, 7
+        DEBUGF 2, "INFO : Add button pressed.\n"
         je      .add_button
         jmp     event_wait  
   
-  .open_button:
+  .openfile_button:
         call    open_dlg
         jmp     event_wait
 
+  .openfolder_button:
+        jmp     event_wait
+
   .add_button:
+        call    add_torrent
         jmp     event_wait  
 
   error:
@@ -221,6 +228,43 @@ copy_str:
       jnz @b
       ret
 
+add_torrent:
+          push    edi
+
+          DEBUGF  2, "INFO : In add_torrent.\n"
+
+          mov     eax, [localhost_ip]
+          mov     [sockaddr_backend.ip],eax
+
+          ;Opening a socket
+          mcall   socket, AF_INET4, SOCK_STREAM, 0
+          cmp     eax, -1
+          jnz     @f
+          DEBUGF 3, "ERROR : Open socket : %d\n",ebx
+          jmp     .error
+
+         ;Connecting with backend
+  @@:     mov     [socketnum], eax
+          mcall   connect, [socketnum], sockaddr_backend, sockaddr_backend.length
+          cmp     eax, -1
+          jnz     @f
+          DEBUGF 3, "ERROR : Connect %d\n",ebx
+          jmp     .error
+  @@:
+
+  .error: DEBUGF 3, "ERROR : Procedure ended with an error.\n"
+          mcall   close, [socketnum]
+          mov     eax, -1
+          pop     edi
+          ret
+
+  .exit:  DEBUGF 2, "INFO : Procedure ended successfully.\n"
+          mcall   close, [socketnum]
+          mov     eax, 0
+
+          pop     edi
+          ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;Import Area;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -259,6 +303,24 @@ include_debug_strings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;Data Area;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Data for connecting with backend
+sockaddr_backend:  
+                        dw AF_INET4
+    .port               dw 23 shl 8     ;port 50000 = 0xC350 -in network byte order     
+    .ip                 dd 0
+                        rb 10
+    .length             =  $ - sockaddr_backend
+
+localhost_ip:
+                        db 127
+                        db 0
+                        db 0
+                        db 1
+
+socketnum               dd 0
+
+buffer                  rb 512
+.length                 =  512
 
 ;Data for window
 window_title             db 'BitTorrent Clinet v1.0',0
@@ -357,13 +419,21 @@ Filter:
 .end:
                         db 0
 
-path                    rb 4096
-openfile_pach           rb 4096
-plugin_pach             rb 4096
+;path                    rb 4096
+;openfile_pach           rb 4096
+;plugin_pach             rb 4096
+;procinfo                rb 1024
+;filename_area           rb 256
+;cur_dir_path            rb 4096
+;library_path            rb 4096
+
+path                    rb 1024
+openfile_pach           rb 1024
+plugin_pach             rb 1024
 procinfo                rb 1024
 filename_area           rb 256
-cur_dir_path            rb 4096
-library_path            rb 4096
+cur_dir_path            rb 1024
+library_path            rb 1024
 
 I_END:
   rb 0x1000             ; stack

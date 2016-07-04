@@ -317,7 +317,7 @@ DEBUGF 2,'dict\n'
         pop     esi edx
         lea     eax, [hex]
         push    esi
-    	invoke	crash.bin2hex, edx, eax, LIBCRASH_SHA1
+	invoke	crash.bin2hex, edx, eax, LIBCRASH_SHA1
         pop     esi
         mov     ebx, [_torrent]
         lea     edx, [ebx + torrent.info_hash]
@@ -444,65 +444,27 @@ DEBUGF 2,'list\n'
         jz      @f
         DEBUGF 3,'ERROR: bad type\n'
         jmp     .error
-    @@: 
-        ;stores count of pieces
+    @@:
         mov     ebx, [_torrent]
         stdcall torrent._.bdecode_readnum
         xor     edx, edx
         mov     edi, 20
+        mov     ecx, eax
         div     edi
         mov     [ebx + torrent.pieces_cnt], eax
-        
-        ;allocates memory : (pieces_cnt*sizeof.piece)
-        xor     edx, edx
-        mov     ecx, sizeof.piece 
-        mul     ecx
         push    ecx
-        invoke  mem.alloc, eax
+        invoke  mem.alloc, ecx
         pop     ecx
         test    eax, eax
         jnz     @f
         DEBUGF 3,'ERROR: bdecode_pieces alloc\n'
         jmp     .error
-
     @@:
-        ;fills piece structure
         mov     [ebx + torrent.pieces], eax
-        stdcall piece._.fill_all_pieces, [_torrent], eax
-
-        ;print first piece
-        DEBUGF 2, "First Piece\n"
-        mov     eax, [ebx + torrent.pieces]
-        DEBUGF 2, "Index : %d\n", [eax+piece.index]
-        DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
-        DEBUGF 2, "Download Status : %d\n", [eax+piece.download_status]
-        DEBUGF 2, "Blocks downloaded : %d\n", [eax+piece.num_blocks_downloaded]
-        DEBUGF 2, "Number of offsets : %d\n", [eax+piece.num_offsets]
-        DEBUGF 2, "Piece Offset : %d\n", [eax+piece.piece_offset]
-        DEBUGF 2, "Length : %d\n", [eax+piece.length]
-        DEBUGF 2, "File Offset : %d\n", [eax+piece.file_offset]
-        DEBUGF 2, "File Index : %d\n", [eax+piece.file_index]
-        
-        ;print last piece
-        DEBUGF 2, "Last Piece\n"
-        mov    ecx, [ebx+torrent.pieces_cnt]
-        dec    ecx
-        imul   ecx, sizeof.piece
-        add    eax, ecx
-        DEBUGF 2, "Index : %d\n", [eax+piece.index]
-        DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
-        DEBUGF 2, "Download Status : %d\n", [eax+piece.download_status]
-        DEBUGF 2, "Blocks downloaded : %d\n", [eax+piece.num_blocks_downloaded]
-        DEBUGF 2, "Number of offsets : %d\n", [eax+piece.num_offsets]
-        DEBUGF 2, "Piece Offset : %d\n", [eax+piece.piece_offset]
-        DEBUGF 2, "Length : %d\n", [eax+piece.length]
-        DEBUGF 2, "File Offset : %d\n", [eax+piece.file_offset]
-        DEBUGF 2, "File Index : %d\n", [eax+piece.file_index]
-
-        ;stdcall piece._.set_piece, [_torrent], 1, 
-
+        mov     edi, eax
+        shr     ecx, 2
+        rep     movsd
         jmp     .quit
-
   .error:
   .quit:
         pop     edi ebx
@@ -763,5 +725,3 @@ db 0
 
 keys_tracker_response_peers:
 db 0
-
-

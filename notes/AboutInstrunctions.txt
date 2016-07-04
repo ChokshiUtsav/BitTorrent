@@ -1,0 +1,32 @@
+General:
+Usually first is the destination operand and second is the source operand. 
+[mnemonic dest, source ]
+
+1) stos :
+It places the value of AL, AX, or EAX into the destination string element.
+
+2) lods:
+It places the source string element into AL, AX, or EAX. The operand should be the source string element addressed by SI or ESI with any segment prefix. 
+
+3) add, sub, cmp :
+
+For add, sub, cmp
+The destination operand can be general register or memory, the source operand can be general register or immediate value, it can also be memory if the destination operand is register. 
+-add replaces the destination operand with the sum of the source and destination operands and sets CF if overflow has occurred.
+-sub subtracts the source operand from the destination operand and replaces the destination operand with the result. If a borrow is required, the CF is set. 
+-cmp subtracts the source operand from the destination operand. It updates the flags as the sub instruction, but does not alter the source and destination operands. 
+
+
+4) inc, dec :
+The operand can be general register or memory
+-inc adds one to the operand, it does not affect CF
+-dec subtracts one from the operand, it does not affect CF. 
+
+5) mov :
+It transfers a byte, word or double word from the source operand to the destination operand. It can transfer data between general registers, from the general register to memory, or from memory to general register, but it cannot move from memory to memory.
+
+6) imul :
+It performs a signed multiplication operation. This instruction has three variations. First has one operand and behaves in the same way as the mul instruction. Second has two operands, in this case destination operand is multiplied by the source operand and the result replaces the destination operand. Destination operand must be a general register, it can be word or double word, source operand can be general register, memory or immediate value. 
+
+7) lea :
+lea transfers the offset of the source operand (rather than its value) to the destination operand. The source operand must be a memory operand, and the destination operand must be a general register. 

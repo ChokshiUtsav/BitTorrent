@@ -356,13 +356,50 @@ proc piece._.set_piece	_torrent, _index, _data
 endp
 
 ;generates hash of piece-data
-proc piece._.generate_hash _data, _hash
+proc piece._.generate_hash _data, _len, _hash
+	
+	locals
+        	msglen		dd ?
+        	hex         rb 128
+	endl
+
+			mov 		[msglen], 0
+    		lea     	ecx, [msglen]
+    		invoke  	crash.hash, LIBCRASH_SHA1, _hash, _data, [_len], callback, ecx
+
+    		lea     	eax, [hex]            
+    		invoke		crash.bin2hex, _hash, eax, LIBCRASH_SHA1
 
 endp
 
 ;verifies hash of piece-data against original hash
 proc piece._.verify_hash _torrent, _index, _hash
+			
+			push 		ebx ecx edx esi edi
 
+			mov         eax, [_torrent]
+			mov         ebx, [_index]
+			imul        ebx, sizeof.piece
+			add         ebx, [eax+torrent.pieces]
+			mov         esi, [ebx+piece.piece_hash]
+
+			mov         edi, _hash
+			mov         ecx, 20
+			rep         compsb
+
+			cmp         ecx, 0
+			je          .quit
+			jmp         .error
+
+	.error: DEBUGF 3, "ERROR : Hash did not match"
+			mov 		eax, -1
+			pop             edi esi edx ecx ebx
+			ret
+
+	.error: DEBUGF 2, "INFO : Hash matched"
+			mov 		eax, -1
+			pop         edi esi edx ecx ebx
+			ret
 endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

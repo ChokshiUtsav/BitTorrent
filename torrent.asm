@@ -46,6 +46,7 @@ include 'bencode.asm'
 include 'tracker.asm'
 include 'percent.asm'
 include 'peer.asm'
+include 'piece.asm'
 
 virtual at 0
         http_msg http_msg
@@ -477,6 +478,7 @@ import  libio                    , \
         file.size , 'file_size' , \
         file.open , 'file_open' , \
         file.read , 'file_read' , \
+        file.write , 'file_write' , \
         file.close, 'file_close',\
         file.seek, 'file_seek'
 

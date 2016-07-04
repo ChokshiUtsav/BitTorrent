@@ -293,9 +293,9 @@ sample_request_msg:
 
 
 ipaddress:
-					db 80 
-					db 71
-					db 131
-					db 244
+						db 80 
+						db 71
+						db 131
+						db 244
 
-port                dw 51413
+port                	dw 51413
