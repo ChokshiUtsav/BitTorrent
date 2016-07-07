@@ -1,4 +1,4 @@
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -389,15 +389,14 @@ proc piece._.verify_hash _torrent, _index, _hash
 
 			cmp         ecx, 0
 			je          .quit
-			jmp         .error
 
 	.error: DEBUGF 3, "ERROR : Hash did not match"
 			mov 		eax, -1
 			pop             edi esi edx ecx ebx
 			ret
 
-	.error: DEBUGF 2, "INFO : Hash matched"
-			mov 		eax, -1
+	.quit: DEBUGF 2, "INFO : Hash matched"
+			mov 		eax, 0
 			pop         edi esi edx ecx ebx
 			ret
 endp
