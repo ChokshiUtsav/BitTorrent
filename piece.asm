@@ -357,6 +357,17 @@ endp
 
 ;generates hash of piece-data
 proc piece._.generate_hash _data, _len, _hash
+	locals
+        	msglen		dd ?
+        	hex         rb 128
+	endl
+
+			mov 		[msglen], 0
+    		lea     	ecx, [msglen]
+    		invoke  	crash.hash, LIBCRASH_SHA1, _hash, _data, [_len], callback, ecx
+
+    		lea     	eax, [hex]            
+    		invoke		crash.bin2hex, _hash, eax, LIBCRASH_SHA1
 	
 endp
 
@@ -393,14 +404,14 @@ endp
 ;;;;;;; Data Area;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-cur_file_index			dd  ?
-cur_file_offset			dd  ?
-cur_file_rem_size		dd  ?
-cur_piece_offset		dd 	?
-cur_piece_rem_size		dd  ?
-num_offsets				dd  ?
-piece_index         	dd  ?
-num_bytes 				dd  ?
+cur_file_index          dd  ?
+cur_file_offset         dd  ?
+cur_file_rem_size       dd  ?
+cur_piece_offset        dd 	?
+cur_piece_rem_size      dd  ?
+num_offsets             dd  ?
+piece_index             dd  ?
+num_bytes               dd  ?
 file_array_elemet_size  =  0x1000
 filename                rb 0x1000
-filedesc               	dd  0
+filedesc                dd 0
