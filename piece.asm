@@ -358,18 +358,6 @@ endp
 ;generates hash of piece-data
 proc piece._.generate_hash _data, _len, _hash
 	
-	locals
-        	msglen		dd ?
-        	hex         rb 128
-	endl
-
-			mov 		[msglen], 0
-    		lea     	ecx, [msglen]
-    		invoke  	crash.hash, LIBCRASH_SHA1, _hash, _data, [_len], callback, ecx
-
-    		lea     	eax, [hex]            
-    		invoke		crash.bin2hex, _hash, eax, LIBCRASH_SHA1
-
 endp
 
 ;verifies hash of piece-data against original hash
