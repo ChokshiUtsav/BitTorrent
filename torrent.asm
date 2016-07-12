@@ -47,6 +47,7 @@ include 'tracker.asm'
 include 'percent.asm'
 include 'peer.asm'
 include 'piece.asm'
+include 'fileops.asm'
 
 virtual at 0
         http_msg http_msg
@@ -82,199 +83,295 @@ endp
 ;Adding new torrent
 proc torrent.new _bt_new_type, _src
 
-			push    ebx esi edi
+            push    ebx esi edi
 
-			DEBUGF 2, "INFO : In torrent.new\n"
+            DEBUGF 2, "INFO : In torrent.new\n"
 
-			invoke  mem.alloc, sizeof.torrent
-			test	eax, eax
-			jnz 	@f
-			DEBUGF 3, "ERROR : Not enough memory for new torrent\n"
-			jmp 	.error
+            invoke  mem.alloc, sizeof.torrent
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3, "ERROR : Not enough memory for new torrent\n"
+            jmp     .error
 
-	@@:		mov 	ebx,eax
-			invoke	mem.alloc, sizeof.ipc_buffer
-			test	eax, eax
-			jnz		@f
-			DEBUGF 3, "ERROR : Not enough memory for ipc buffer\n"
-			jmp 	.error
+    @@:     mov     ebx,eax
+            invoke  mem.alloc, sizeof.ipc_buffer
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3, "ERROR : Not enough memory for ipc buffer\n"
+            jmp     .error
 
-	@@:		mov     [ebx + torrent.ipc_buf], eax
-        	mov     [ebx + torrent.uploaded], 0
-        	mov     [ebx + torrent.downloaded], 0
-        	mov     [ebx + torrent.left], 0
-        	mov     [ebx + torrent.pid], 0
+    @@:     mov     [ebx + torrent.ipc_buf], eax
+            mov     [ebx + torrent.uploaded], 0
+            mov     [ebx + torrent.downloaded], 0
+            mov     [ebx + torrent.left], 0
+            mov     [ebx + torrent.pid], 0
 
-        	cmp     [ebx + torrent.trackers], 0
-        	jnz     .trackers_allocated	 
-        	invoke  mem.alloc, 0x2000
-        	test    eax, eax
-        	jnz     @f
-        	DEBUGF 3, "ERROR: Not enough memory for trackers\n"
-        	jmp     .error
+            cmp     [ebx + torrent.trackers], 0
+            jnz     .trackers_allocated  
+            invoke  mem.alloc, 0x2000
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3, "ERROR: Not enough memory for trackers\n"
+            jmp     .error
     
-    @@:    	mov		[ebx + torrent.trackers], eax
+    @@:     mov     [ebx + torrent.trackers], eax
 
-	.trackers_allocated:
-			cmp     [ebx + torrent.peers], 0
-			jnz		.peers_allocated
-			invoke  mem.alloc, (MAX_PEERS_PER_TORRENT * sizeof.peer)
-        	test    eax, eax
-        	jnz     @f
-        	DEBUGF 3,'ERROR: Not enough memory for peers\n'
-        	jmp     .error
+    .trackers_allocated:
+            cmp     [ebx + torrent.peers], 0
+            jnz     .peers_allocated
+            invoke  mem.alloc, (MAX_PEERS_PER_TORRENT * sizeof.peer)
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3,'ERROR: Not enough memory for peers\n'
+            jmp     .error
 
-    @@:		mov     [ebx + torrent.peers], eax
+    @@:     mov     [ebx + torrent.peers], eax
 
     .peers_allocated:
-    		lea     edi, [ebx + torrent.peer_id]
-        	mov     esi, def_peer_id
-        	mov     ecx, 20
-        	rep 	movsb
+            lea     edi, [ebx + torrent.peer_id]
+            mov     esi, def_peer_id
+            mov     ecx, 20
+            rep     movsb
             mov     eax, [def_port_num]
-        	mov     [ebx + torrent.port], eax 
+            mov     [ebx + torrent.port], eax 
 
-        	cmp     [_bt_new_type], BT_NEW_FILE
-        	jnz		.magnet
+            cmp     [_bt_new_type], BT_NEW_FILE
+            jnz     .magnet
 
-			stdcall torrent._.load_file, ebx, [_src]
-			cmp		eax, -1
-			jnz		.quit
-			DEBUGF 3,"ERROR : Problem loading file\n"
-			jmp		.error
+            stdcall torrent._.load_file, ebx, [_src]
+            cmp     eax, -1
+            jne     .bencoding_done
+            DEBUGF 3,"ERROR : Problem loading file\n"
+            jmp     .error
+
+    .bencoding_done:
+            stdcall torrent._.allocate_file_space, ebx
+            cmp     eax, -1
+            jne     .quit        
+            DEBUGF 3, "ERROR : Problem allocating file space\n"
+            jmp     .error
 
     .magnet:
-    		DEBUGF 3, "ERROR : Magnet links are not supported yet\n"    	
-    		jmp		.error
+            DEBUGF 3, "ERROR : Magnet links are not supported yet\n"        
+            jmp     .error
 
     .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
-			mov		eax, -1
-			pop		edi esi ebx
-			ret
+            mov     eax, -1
+            pop     edi esi ebx
+            ret
 
-	.quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
-			mov   	eax, ebx
-			pop		edi esi ebx	
-			ret
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
+            mov     eax, ebx
+            pop     edi esi ebx 
+            ret
 endp
 
 
 ;Starting a torrent
 proc torrent.start _torrent
-	        push    ebx esi edi
+            push    ebx esi edi
 
-	        DEBUGF 2, "INFO : In torrent.start\n"
+            DEBUGF 2, "INFO : In torrent.start\n"
 
-	        mov     ebx, [_torrent]
-	        invoke  mem.alloc, TORRENT_STACK_SIZE
-	        test    eax, eax
-	        jnz     @f
-	        DEBUGF 3,'ERROR: Not enough memory for child stack\n'
-	        jmp     .error
-	
-	@@:		mov     [ebx + torrent.stack], eax
-	        invoke  mem.alloc, sizeof.ipc_buffer
-	        test    eax, eax
-	        jnz     @f
-	        DEBUGF 3,'ERROR: Not enough memory for child ipc buffer\n'
-	        jmp     .error
+            mov     ebx, [_torrent]
+            invoke  mem.alloc, TORRENT_STACK_SIZE
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3,'ERROR: Not enough memory for child stack\n'
+            jmp     .error
+    
+    @@:     mov     [ebx + torrent.stack], eax
+            invoke  mem.alloc, sizeof.ipc_buffer
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3,'ERROR: Not enough memory for child ipc buffer\n'
+            jmp     .error
 
-	@@:		mov     [ebx + torrent.ipc_buf], eax
-	        mov     edx, [ebx + torrent.trackers]
-	        stdcall torrent._.tracker_get, [_torrent], edx
-	        cmp		eax,-1
-	        jnz		@f
-	        DEBUGF 3, "ERROR: Problem with connecting tracker.\n"
-	        jmp		.error
+    @@:     mov     [ebx + torrent.ipc_buf], eax
+            mov     edx, [ebx + torrent.trackers]
+            stdcall torrent._.tracker_get, [_torrent], edx
+            cmp     eax,-1
+            jnz     @f
+            DEBUGF 3, "ERROR: Problem with connecting tracker.\n"
+            jmp     .error
 
-	@@:     stdcall torrent._.print_torrent, [_torrent]
-			jmp 	.quit
+    @@:     stdcall torrent._.print_torrent, [_torrent]
+            jmp     .quit
 
 
-    .error:	DEBUGF 3, "ERROR: Procedure ended with error\n"
-    		mov     eax, -1
-    		pop 	edi esi ebx
-	
-	.quit:	DEBUGF 2, "INFO: Procedure ended successfully\n"
-			mov     eax, 0
-	        pop     edi esi ebx
-	        ret
+    .error: DEBUGF 3, "ERROR: Procedure ended with error\n"
+            mov     eax, -1
+            pop     edi esi ebx
+    
+    .quit:  DEBUGF 2, "INFO: Procedure ended successfully\n"
+            mov     eax, 0
+            pop     edi esi ebx
+            ret
 endp
 
 
 ;Loading torrent file
 proc torrent._.load_file _torrent, _file
-			
-			push    ebx esi edi
+            
+            push    ebx esi edi
 
-			locals
-	            filedesc dd ?
-	            filebuf  dd ?
-	            filesize dd ?
-	        endl
+            locals
+                filedesc dd ?
+                filebuf  dd ?
+                filesize dd ?
+            endl
 
-			DEBUGF 2, "INFO : In torrent._.load_file\n"
+            DEBUGF 2, "INFO : In torrent._.load_file\n"
 
-			invoke  file.size, [_file]
-			cmp     ebx, -1
-			jnz		@f
-			DEBUGF 3, "ERROR: file.size\n"
-			jmp 	.error
+            invoke  file.size, [_file]
+            cmp     ebx, -1
+            jnz     @f
+            DEBUGF 3, "ERROR: file.size\n"
+            jmp     .error
 
-	@@:		mov 	[filesize], ebx	
-			invoke	mem.alloc, [filesize]
-			test	eax,eax
-			jnz		@f
-			DEBUGF 3, "ERROR: Not enough memory for file\n"
-			jmp		.error
+    @@:     mov     [filesize], ebx 
+            invoke  mem.alloc, [filesize]
+            test    eax,eax
+            jnz     @f
+            DEBUGF 3, "ERROR: Not enough memory for file\n"
+            jmp     .error
 
-	@@:		mov   	[filebuf], eax
-			invoke	file.open, [_file], O_READ
-			test	eax, eax
-			jnz     @f
-        	DEBUGF 3,"ERROR: file.open\n"
-        	jmp      .error
+    @@:     mov     [filebuf], eax
+            invoke  file.open, [_file], O_READ
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3,"ERROR: file.open\n"
+            jmp      .error
 
-    @@:		mov    	[filedesc], eax
-    		invoke	file.read, [filedesc], [filebuf], [filesize]
-    		cmp		eax, -1			
-    		jnz     @f
-        	DEBUGF 3,"ERROR: file.read\n"
-        	jmp      .error
+    @@:     mov     [filedesc], eax
+            invoke  file.read, [filedesc], [filebuf], [filesize]
+            cmp     eax, -1         
+            jnz     @f
+            DEBUGF 3,"ERROR: file.read\n"
+            jmp      .error
 
-    @@:		invoke	file.close, [filedesc]
-    		cmp		eax, -1
-    		jnz		@f
-    		DEBUGF 3,"ERROR: file.close\n"
-    		jmp		.error
+    @@:     invoke  file.close, [filedesc]
+            cmp     eax, -1
+            jnz     @f
+            DEBUGF 3,"ERROR: file.close\n"
+            jmp     .error
 
-    @@:		mov  	esi, [filebuf]
-    		mov 	eax, esi
-    		inc 	esi
-    		add 	eax, [filesize]
-    		DEBUGF 2,"INFO : Intial content of torrent file %s\n",[filebuf]
-    		DEBUGF 2,"INFO : Size of torrent file %d bytes\n",[filesize]
-
-    		stdcall torrent._.bdecode_dict, [_torrent], eax, known_keys_0
-    		DEBUGF 2,"INFO : Ben-decoding done successfully.\n"
-    		jmp		.quit
-	
+    @@:     mov     esi, [filebuf]
+            mov     eax, esi
+            inc     esi
+            add     eax, [filesize]
+            stdcall torrent._.bdecode_dict, [_torrent], eax, known_keys_0
+            DEBUGF 2,"INFO : Ben-decoding done successfully.\n"
+            jmp     .quit
+    
     .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
-			mov		eax, -1
-			pop		edi esi ebx
-			ret	
+            mov     eax, -1
+            pop     edi esi ebx
+            ret 
 
-	.quit:	DEBUGF 2, "INFO : Procedure ended successfully\n"
-			mov   	eax, 0
-			pop		edi esi ebx	
-			ret
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
+            mov     eax, 0
+            pop     edi esi ebx 
+            ret
+endp
+
+;Creating file space along with directory structure
+proc torrent._.allocate_file_space _torrent, _downloadlocation
+        
+            push    ebx esi edi
+
+            mov     ebx, [_torrent]
+
+            cmp     [ebx+torrent.files_cnt], 1
+            je      .single_file
+
+            lea     esi, [ebx+torrent.name]         ;stores directory name in case of multifile.
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], esi, absolute_path
+            stdcall fileops._.create_folder, absolute_path
+            cmp     eax, -1
+            jne     .multi_files
+            DEBUGF 3, "ERROR : Can not create root folder\n"
+            jmp     .error
+
+    .multi_files:
+            mov     ecx, 0
+            lea     esi,[absolute_path]
+            lea     edi,[_downloadlocation]
+            rep     movsb
+    .next_file:
+            cmp      ecx, [ebx+torrent.files_cnt]
+            je      .quit
+
+            mov     esi,ecx
+            imul    esi,0x1000
+            add     esi,[ebx+torrent.files]
+            loadsd
+            mov     [file_size], eax
+            add     esi,4
+
+            lea     edi,[name]
+    .loop:  cmp     byte[esi], '/'
+            je      @f
+            cmp     byte[esi], '\0'
+            je      .process_file
+            movsb
+            jmp     .loop
+
+    .process_dir: 
+            mov     byte[edi], '\0'
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
+            stdcall fileops._.create_folder, absolute_path
+            cmp     eax, -1
+            jne     @f
+            DEBUGF 3, "ERROR : Can not create root folder\n"
+            jmp     .error
+
+        @@: mov     byte[edi], '/'
+            inc     edi
+            inc     esi
+            jmp     .loop
+
+    .process_file:    
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
+            stdcall fileops._.create_file, name, file_size
+            cmp     eax, -1
+            jne     @f
+            DEBUGF 3, "ERROR : Can not create a file\n"
+            jmp     .error
+
+        @@: jmp     .next_file
+
+            
+    .single_file:
+            lea     esi, [ebx+torrent.files]
+            loadsd
+            mov     [file_size], eax
+            add     esi, 4
+            lea     edi, [name]
+            rep     movsb
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
+            stdcall fileops._.create_file, name, file_size
+            cmp     eax, -1
+            jne     .quit
+            DEBUGF 3, "ERROR : Can not create a file\n"
+            jmp     .error
+
+    .error: DEBUGF 3, "ERROR: Procedure ended with error"
+            mov     eax, -1
+            pop     edi esi ebx
+            ret
+
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully"
+            mov     eax, 0
+            pop     edi esi ebx
+            ret
 endp
 
 ;Prints a number at location pointed by EDI
 proc torrent._.print_num _num
         push    ebx
 
-       	DEBUGF 2,"INFO : In torrent._.print_num\n"
+        DEBUGF 2,"INFO : In torrent._.print_num\n"
         mov     eax, [_num]
         mov     ebx, 10
         xor     ecx, ecx
@@ -299,42 +396,6 @@ proc torrent._.print_num _num
         pop     ebx
         ret
 endp
-
-;Prints a number at location pointed by EDI
-proc torrent._.print_num_modified _num
-        push    ebx
-
-        DEBUGF 2,"INFO : In torrent._.print_num\n"
-        DEBUGF 2, "INFO : port number : %d",[_num]
-        xor     eax, eax
-        mov     ax, [_num]
-        DEBUGF 2, "INFO : port number : %d",[_num]
-        DEBUGF 2, "INFO : port number : %d",eax
-        mov     ebx, 10
-        xor     ecx, ecx
-
-    @@:
-        xor     edx, edx
-        div     ebx
-        push    edx
-        inc     ecx
-        test    eax, eax
-        jnz     @b
-
-    @@:
-        pop     eax
-        add     eax, '0'
-        stosb
-        dec     ecx
-        jnz     @b
-
-
-        DEBUGF 2,"INFO : Procedure ended successfully\n"
-        pop     ebx
-        ret
-endp
-
-
 
 ;Printing torrent details
 proc torrent._.print_torrent _torrent
@@ -440,27 +501,25 @@ proc torrent._.print_peer _peer
 endp
 
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;Import & Export Area;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
 
 align 16
 @EXPORT:
 
 export                                      \
         lib_init           , 'lib_init'   , \
-        torrent.new        , 'new'		  , \
+        torrent.new        , 'new'        , \
         torrent.start      , 'start'
 
 align 16
 @IMPORT:
 
 library                            \
-		network,   'network.obj' , \
+        network,   'network.obj' , \
         lib_http,  'http.obj'    , \
-        libio,     'libio.obj',	   \
+        libio,     'libio.obj',    \
         libcrash,  'libcrash.obj'
 
 import network,                       \
@@ -482,10 +541,10 @@ import  libio                    , \
         file.close, 'file_close',\
         file.seek, 'file_seek'
 
-import libcrash			        , \
-	libcrash.init  , 'lib_init'	, \
-	crash.hash     , 'crash_hash'	, \
-	crash.bin2hex  , 'crash_bin2hex'
+import libcrash                 , \
+    libcrash.init  , 'lib_init' , \
+    crash.hash     , 'crash_hash'   , \
+    crash.bin2hex  , 'crash_bin2hex'
 
 
 
@@ -502,7 +561,7 @@ mem.alloc       dd ?
 mem.free        dd ?
 mem.realloc     dd ?
 dll.load        dd ?
-def_peer_id 	db '-KS0001-123456654321'     ;KS for KolibriOS
+def_peer_id     db '-KS0001-123456654321'     ;KS for KolibriOS
 def_port_num    dd 60001
 fileinfo        dd 2, 0, 0
 final_size      dd 0
@@ -510,3 +569,6 @@ final_buffer    dd 0
                 db 0
                 dd fname_buf
 fname_buf       db '/usbhd0/1/get.out',0
+absolute_path   rb 4096
+file_size       dd ?
+name            rb 4096

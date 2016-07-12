@@ -317,7 +317,7 @@ DEBUGF 2,'dict\n'
         pop     esi edx
         lea     eax, [hex]
         push    esi
-    	invoke	crash.bin2hex, edx, eax, LIBCRASH_SHA1
+        invoke  crash.bin2hex, edx, eax, LIBCRASH_SHA1
         pop     esi
         mov     ebx, [_torrent]
         lea     edx, [ebx + torrent.info_hash]
