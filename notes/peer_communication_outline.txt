@@ -1,0 +1,32 @@
+;All blocks from one piece strategy
+
+;one time action
+send( msg = 2 (interested))
+
+loop : recv msg
+	if msg == 20 (extended)
+		ignore
+	if msg == 1 (Unchoke)
+		peer.is_choking = 0
+	if msg == 5 (bitfield)
+		set peer.bitfield
+	if msg == 0 (choke)
+		peer.is_choking = 1
+	if msg == 7 (piece)
+		keep downloading till recieved byte reaches to piece length
+
+	if msg == 4 (have)
+		update the bit-field
+
+
+	if peer.is_choking == 1
+	   wait for 2 mins
+	   send(keep-alive msg)
+	   recv(some msg ?)
+	   send(keep-alive msg)
+	   recv(some msg ?)
+	   close connection
+	   quit
+
+	if peer.is_choking == 0
+		send( msg = 6(request))
