@@ -38,8 +38,9 @@ endp
 
 ;creates an empty file of given size
 proc fileops._.create_file _name, _size
-            
+
             DEBUGF 2, "INFO: In fileops._.create_file\n"
+            push        ebx ecx
 
             mov         eax, [_name]
             mov         [fileinfo_create.name],eax
@@ -63,10 +64,12 @@ proc fileops._.create_file _name, _size
 
     .error: DEBUGF 2,   "ERROR: Procedure ended with error\n"
             mov         eax, -1
+            pop         ecx ebx
             ret
 
     .quit:  DEBUGF 2, "INFO: Procedure ended successfully\n"    
             mov         eax, 0
+            pop         ecx ebx
             ret 
 endp
 
@@ -75,21 +78,26 @@ proc fileops._.create_folder _name
 
             DEBUGF 2, "INFO: In fileops._.create_folder\n"
 
+            push        ebx ecx
             mov         eax, [_name]
             mov         [fileinfo_create.name],eax
             mov         [fileinfo_create.filesize_low],0
-            
+
+            ;creating a folder
+            mov         [fileinfo_create.subfunction], 9
             mcall       70, fileinfo_create
             cmp         eax, 0
-            je          @f
-            DEBUGF 2,   "ERROR : Problem creating a folder.\n"
+            je          .quit
+            DEBUGF 2,   "ERROR : Problem creating a folder\n", eax
 
     .error: DEBUGF 2,   "ERROR: Procedure ended with error\n"
             mov         eax, -1
+            pop         ecx ebx
             ret
 
     .quit:  DEBUGF 2, "INFO: Procedure ended successfully\n"    
             mov         eax, 0
+            pop         ecx ebx
             ret 
 endp
 

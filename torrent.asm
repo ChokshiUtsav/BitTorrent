@@ -81,7 +81,7 @@ proc lib_init
 endp
 
 ;Adding new torrent
-proc torrent.new _bt_new_type, _src
+proc torrent.new _bt_new_type, _src, _downloadlocation
 
             push    ebx esi edi
 
@@ -145,7 +145,7 @@ proc torrent.new _bt_new_type, _src
             jmp     .error
 
     .bencoding_done:
-            stdcall torrent._.allocate_file_space, ebx
+            stdcall torrent._.allocate_file_space, ebx, [_downloadlocation] 
             cmp     eax, -1
             jne     .quit        
             DEBUGF 3, "ERROR : Problem allocating file space\n"
@@ -281,7 +281,6 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
             push    ebx esi edi
 
             mov     ebx, [_torrent]
-
             cmp     [ebx+torrent.files_cnt], 1
             je      .single_file
 
@@ -294,31 +293,35 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
             jmp     .error
 
     .multi_files:
-            mov     ecx, 0
+            ;change download location to newly created root folder path
             lea     esi,[absolute_path]
-            lea     edi,[_downloadlocation]
-            rep     movsb
+            mov     edi,[_downloadlocation]
+        @@: cmp     byte [esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+        @@: mov     byte[edi], 0x00
+            mov     ecx, 0
+
     .next_file:
-            cmp      ecx, [ebx+torrent.files_cnt]
+            cmp     ecx, [ebx+torrent.files_cnt]
             je      .quit
 
             mov     esi,ecx
             imul    esi,0x1000
             add     esi,[ebx+torrent.files]
-            loadsd
+            lodsd
             mov     [file_size], eax
-            add     esi,4
-
-            lea     edi,[name]
+            lea     edi, [name]
     .loop:  cmp     byte[esi], '/'
-            je      @f
-            cmp     byte[esi], '\0'
+            je      .process_dir
+            cmp     byte[esi], 0x00
             je      .process_file
             movsb
             jmp     .loop
 
     .process_dir: 
-            mov     byte[edi], '\0'
+            mov     byte[edi], 0x00
             stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
             stdcall fileops._.create_folder, absolute_path
             cmp     eax, -1
@@ -331,37 +334,45 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
             inc     esi
             jmp     .loop
 
-    .process_file:    
+    .process_file:
+            mov     byte[edi], 0x00
             stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
-            stdcall fileops._.create_file, name, file_size
+            ;stdcall fileops._.create_file, absolute_path, [file_size]
+            stdcall fileops._.create_file, absolute_path, 1024
             cmp     eax, -1
             jne     @f
             DEBUGF 3, "ERROR : Can not create a file\n"
             jmp     .error
 
-        @@: jmp     .next_file
+        @@: inc     ecx
+            jmp     .next_file   
 
             
     .single_file:
-            lea     esi, [ebx+torrent.files]
-            loadsd
+            mov     esi, [ebx+torrent.files]
+            lodsd
             mov     [file_size], eax
-            add     esi, 4
             lea     edi, [name]
-            rep     movsb
+        @@: cmp     byte[esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+
+        @@: mov     byte[edi], 0x00
             stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
-            stdcall fileops._.create_file, name, file_size
+            ;stdcall fileops._.create_file, absolute_path, [file_size]
+            stdcall fileops._.create_file, absolute_path, 1024
             cmp     eax, -1
             jne     .quit
             DEBUGF 3, "ERROR : Can not create a file\n"
             jmp     .error
 
-    .error: DEBUGF 3, "ERROR: Procedure ended with error"
+    .error: DEBUGF 3, "ERROR: Procedure ended with error.\n"
             mov     eax, -1
             pop     edi esi ebx
             ret
 
-    .quit:  DEBUGF 2, "INFO : Procedure ended successfully"
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully.\n"
             mov     eax, 0
             pop     edi esi ebx
             ret
