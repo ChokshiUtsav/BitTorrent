@@ -1,7 +1,11 @@
 TORRENT_STACK_SIZE = 0x1000
 
 MAX_PEERS_PER_TORRENT = 50
-MAX_PEERS_TOTAL = 200
+MAX_PEERS_TOTAL       = 200
+NUM_PIECES_IN_MEM     = 10
+
+RECV_TIMEOUT       = 1          ;in seconds
+PEER_TIMEOUT       = 60         ;in seconds
 
 BT_TRACKER_PROTOCOL_TCP  = 0    ; bep_0003: The BitTorrent Protocol Specification
 BT_TRACKER_PROTOCOL_UDP  = 1    ; bep_0015: UDP Tracker Protocol for BitTorrent
@@ -43,6 +47,17 @@ BT_PIECE_DOWNLOAD_NOT_STARTED = 0
 BT_PIECE_DOWNLOAD_IN_PROGRESS = 1
 BT_PIECE_DOWNLOAD_COMPLETE    = 2
 
+MEM_LOCATION_EMPTY = 0          ;location is empty
+MEM_LOCATION_IN_USE = 1         ;either upload/download is in progress
+MEM_LOCATION_FILLED = 2         ;piece is downloaded and not being uploaded
+
+HANDSHAKE_MSGLEN = 68
+NOPAYLOAD_MSGLEN = 5
+REQUEST_MSGLEN   = 17
+BUFFERSIZE       = 4096
+BLOCKLENGTH      = 16384        ;2^14 : standard block size
+
+
 struct ipc_buffer
         locked   dd ?
         occupied dd ?
@@ -68,16 +83,21 @@ struct peer
         ipv4            dd ?
         ipv6            rb 16
         port            dd ?
-        peer_id_present dd ?
-        peer_id         rb 20
         url             rb 256
         am_choking      db ?
         am_interested   db ?
         is_choking      db ?
         is_interested   db ?
         protocol        db ?
+        peer_id_present dd ?
+        peer_id         rb 20
+        sock_num        dd ?     ;socket number for communication
         last_seen       dd ?
-        bit_field       dd ?
+        cur_piece       dd ?     ;index of piece being downloaded by peer
+        cur_block       dd ?     ;index of block(within piece) being downloaded by peer
+        piece_location  dd ?     ;location of cur_piece within piece_mem
+
+        bitfield        rb 1024
 ends
 
 ;Requires approximately 2kB
@@ -94,33 +114,32 @@ struct piece
 ends
 
 struct torrent
-        trackers_cnt    dd ?
-        trackers        dd ?    ; array
-        peers_cnt       dd ?
-        peers           dd ?
-        pieces_cnt      dd ?
-        pieces          dd ?    ;array
-        piece_length    dd ?
-        files_cnt       dd ?
-        files           dd ?    ;array
-        info            dd ?
-        info_hash       rb 20   ; sha1 length
-        peer_id         rb 20
-        port            dd ?
-        name            rb 256  ; utf-8
-        uploaded        dd ?
-        downloaded      dd ?
-        left            dd ?
-        pid             dd ?
-        parent_pid      dd ?
-        stack           dd ?
-        stub            dd ?
-        ipc_buf         dd ?
-        ipc_msg         ipc_message
-        proc_info       process_information
-ends
-
-struct bit_field
-        size            dd ?
-        bytes           rb 1024
+        trackers_cnt     dd ?
+        trackers         dd ?    ; array
+        peers_cnt        dd ?
+        peers            dd ?
+        pieces_cnt       dd ?
+        pieces           dd ?    ;array
+        piece_length     dd ?
+        num_blocks       dd ?    ;piece_length/BLOCKLENGTH
+        files_cnt        dd ?
+        files            dd ?    ;array
+        info             dd ?
+        info_hash        rb 20   ;sha1 length
+        peer_id          rb 20
+        port             dd ?
+        name             rb 256  ; utf-8
+        uploaded         dd ?
+        downloaded       dd ?
+        left             dd ?
+        piece_mem        dd ?    ;array of pieces kept in memory [each element = piece size]
+        piece_mem_status rb NUM_PIECES_IN_MEM*5    ;array of status of pieces kept in memory
+        bitfield         rb 1024
+        pid              dd ?
+        parent_pid       dd ?
+        stack            dd ?
+        stub             dd ?
+        ipc_buf          dd ?
+        ipc_msg          ipc_message
+        proc_info        process_information
 ends

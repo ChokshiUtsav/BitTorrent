@@ -1,14 +1,14 @@
 File Space Allocation Outline :
 
 If torrent.files_cnt > 1
-	create directory with torrent.name under user provided path
+	create root downlaod folder with torrent.name under user provided download_location
 	loop over torrent.files :
-		extract first 4 bytes : file-size
+		extract first 4 bytes 	: file-size
 		extract string after it : complete file path
-		prepare path [process all '/' and create directories]
-		create empty file of that size 
+		prepare path [process all '/' and create folders]
+		create empty file of that size under root download folder+complete file path
 else
-	torrent.files:
-	extract first 4 bytes :file-size
+	go to torrent.files:
+	extract first 4 bytes 	: file-size
 	extract string after it : file-name
-	create empty file of that size under user provided path
+	create empty file of that size under user provided download_location

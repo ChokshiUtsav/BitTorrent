@@ -15,11 +15,11 @@ bittorrent_frontend: bittorrent_frontend.asm
 
 run : clean all
 	mcopy -vmoi $(KOLIBRI_IMG_PATH)/kolibri.img torrent.obj ::lib/torrent.obj
-	$(QEMU) -L . -m 4096 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:fat:rw:$(HDA_PATH) -usbdevice tablet
+	$(QEMU) -L . -m 1024 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:fat:rw:$(HDA_PATH) -usbdevice tablet
 
 clean :
 	rm -f torrent.obj bittorrent_frontend bittorrent_backend
 
 qemu_run:
-	$(QEMU) -L . -m 1024 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:/dev/sda -usbdevice tablet
+	$(QEMU) -L . -m 1024 -fda $(KOLIBRI_IMG_PATH)/kolibri.img -boot a -vga vmware -net nic,model=rtl8139 -net user -soundhw ac97 -usb -usbdevice disk:format=raw:fat:rw:$(HDA_PATH) -usbdevice tablet	
 

@@ -289,8 +289,8 @@ locals
         info_begin      dd ?
         info_end        dd ?
         info_len        dd ?
-        msglen          dd ?
-        hex             rb 128
+        ;msglen          dd ?
+        ;hex             rb 128
 endl
 DEBUGF 2,'dict\n'
         push    ebx edx edi
@@ -310,18 +310,22 @@ DEBUGF 2,'dict\n'
 
         mov     ebx, [_torrent]
         lea     edx, [ebx + torrent.info_hash]
-        mov     [msglen], 0
-        lea     ecx, [msglen]
-        push    edx esi
-        invoke  crash.hash, LIBCRASH_SHA1, edx, [info_begin], [info_len], callback, ecx
-        pop     esi edx
-        lea     eax, [hex]
-        push    esi
-        invoke  crash.bin2hex, edx, eax, LIBCRASH_SHA1
-        pop     esi
-        mov     ebx, [_torrent]
-        lea     edx, [ebx + torrent.info_hash]
-        lea     eax, [hex]
+        stdcall torrent._.generate_hash, [info_begin], [info_len] ,edx
+
+        ;mov     ebx, [_torrent]
+        ;lea     edx, [ebx + torrent.info_hash]
+        ;mov     [msglen], 0
+        ;lea     ecx, [msglen]
+        ;push    edx esi
+        ;invoke  crash.hash, LIBCRASH_SHA1, edx, [info_begin], [info_len], callback, ecx
+        ;pop     esi edx
+        ;lea     eax, [hex]
+        ;push    esi
+        ;invoke crash.bin2hex, edx, eax, LIBCRASH_SHA1
+        ;pop     esi
+        ;mov     ebx, [_torrent]
+        ;lea     edx, [ebx + torrent.info_hash]
+        ;lea     eax, [hex]
   .error:
   .quit:
         pop     edi edx ebx
@@ -380,7 +384,12 @@ endp
 
 
 proc torrent._.bdecode_info_piece_length _torrent, _arg
-        push    ebx edi
+        
+        locals
+                blocklength_constant dd BLOCKLENGTH
+        endl
+
+        push    ebx edx edi
 
         mov     ebx, [_torrent]
 
@@ -393,11 +402,14 @@ proc torrent._.bdecode_info_piece_length _torrent, _arg
         stdcall torrent._.bdecode_readnum
         DEBUGF 2,'%u\n',eax
         mov     [ebx + torrent.piece_length], eax
+        mov     edx, 0
+        div     [blocklength_constant]
+        mov     [ebx + torrent.num_blocks], eax
         jmp     .quit
         
   .error:
   .quit:
-        pop     edi ebx
+        pop     edi edx ebx
         ret
 endp
 
@@ -437,7 +449,12 @@ endp
 
 proc torrent._.bdecode_info_pieces _torrent, _arg
 DEBUGF 2,'list\n'
-        push    ebx edi
+        
+        locals
+                byte_constant   dw 8
+        endl
+
+        push    ebx edx edi
 
         stdcall torrent._.bdecode_get_type
         cmp     eax, BT_BENCODE_STR
@@ -452,7 +469,13 @@ DEBUGF 2,'list\n'
         mov     edi, 20
         div     edi
         mov     [ebx + torrent.pieces_cnt], eax
-        
+        DEBUGF 2, "INFO : piece count : %d\n", eax
+
+        ;initializes bit-field     
+        lea     eax, [ebx + torrent.bitfield]
+        stdcall torrent._.init_bitfield, [_torrent], eax
+        mov     eax, [ebx + torrent.pieces_cnt]
+
         ;allocates memory : (pieces_cnt*sizeof.piece)
         xor     edx, edx
         mov     ecx, sizeof.piece 
@@ -465,16 +488,18 @@ DEBUGF 2,'list\n'
         DEBUGF 3,'ERROR: bdecode_pieces alloc\n'
         jmp     .error
 
-    @@:
         ;fills piece structure
-        mov     [ebx + torrent.pieces], eax
+    @@: mov     [ebx + torrent.pieces], eax
         stdcall piece._.fill_all_pieces, [_torrent], eax
 
         ;print first piece
         DEBUGF 2, "First Piece\n"
         mov     eax, [ebx + torrent.pieces]
         DEBUGF 2, "Index : %d\n", [eax+piece.index]
-        DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
+        push       edx
+        lea        edx, [eax+piece.piece_hash]
+        DEBUGF 2, "Hash : %x%x%x%x%x\n", [edx+0x0],[edx+0x4],[edx+0x8],[edx+0xc],[edx+0x10]
+        pop        edx
         DEBUGF 2, "Download Status : %d\n", [eax+piece.download_status]
         DEBUGF 2, "Blocks downloaded : %d\n", [eax+piece.num_blocks_downloaded]
         DEBUGF 2, "Number of offsets : %d\n", [eax+piece.num_offsets]
@@ -490,7 +515,10 @@ DEBUGF 2,'list\n'
         imul   ecx, sizeof.piece
         add    eax, ecx
         DEBUGF 2, "Index : %d\n", [eax+piece.index]
-        DEBUGF 2, "Hash : %d\n", [eax+piece.piece_hash]
+        push       edx
+        lea        edx, [eax+piece.piece_hash]
+        DEBUGF 2, "Hash : %x%x%x%x%x\n", [edx+0x0],[edx+0x4],[edx+0x8],[edx+0xc],[edx+0x10]
+        pop        edx
         DEBUGF 2, "Download Status : %d\n", [eax+piece.download_status]
         DEBUGF 2, "Blocks downloaded : %d\n", [eax+piece.num_blocks_downloaded]
         DEBUGF 2, "Number of offsets : %d\n", [eax+piece.num_offsets]
@@ -505,7 +533,7 @@ DEBUGF 2,'list\n'
 
   .error:
   .quit:
-        pop     edi ebx
+        pop     edi edx ebx
         ret
 endp
 
@@ -696,9 +724,14 @@ proc torrent._.bdecode_tracker_peers _torrent, _arg
         xor     eax, eax
         mov     [edi + peer.am_interested], al
         mov     [edi + peer.is_interested], al
-        inc     eax
+        mov     [edi + peer.peer_id_present], eax
+        inc      eax
         mov     [edi + peer.am_choking], al
         mov     [edi + peer.is_choking], al
+        mov     [edi + peer.cur_piece], -1
+        lea      eax, [edi + peer.bitfield]
+        stdcall torrent._.init_bitfield, [_torrent], eax 
+
         lodsd
         ;bswap   eax
         mov     [edi + peer.ipv4], eax

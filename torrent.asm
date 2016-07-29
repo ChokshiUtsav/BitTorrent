@@ -42,12 +42,16 @@ include 'http.inc'
 
 purge section,mov,add,sub
 
+include 'sha1.asm'
+include 'hash.asm'
+include 'piece.asm'
+include 'fileops.asm'
 include 'bencode.asm'
 include 'tracker.asm'
 include 'percent.asm'
+include 'message.asm'
 include 'peer.asm'
-include 'piece.asm'
-include 'fileops.asm'
+
 
 virtual at 0
         http_msg http_msg
@@ -147,8 +151,15 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
     .bencoding_done:
             stdcall torrent._.allocate_file_space, ebx, [_downloadlocation] 
             cmp     eax, -1
-            jne     .quit        
+            jne     .file_space_alloc_done        
             DEBUGF 3, "ERROR : Problem allocating file space\n"
+            jmp     .error
+
+    .file_space_alloc_done:
+            stdcall torrent._.allocate_mem_space, ebx
+            cmp     eax, -1
+            jne     .quit
+            DEBUGF 3, "ERROR : Insufficient memory for torrent downloading\n"
             jmp     .error
 
     .magnet:
@@ -195,7 +206,15 @@ proc torrent.start _torrent
             DEBUGF 3, "ERROR: Problem with connecting tracker.\n"
             jmp     .error
 
-    @@:     stdcall torrent._.print_torrent, [_torrent]
+    @@:     stdcall  torrent._.prep_active_peers, [_torrent]
+            cmp      eax, 0
+            jne      @f
+            DEBUGF 3, "ERROR: No active peers found.\n"
+            jmp      .error
+
+    @@:     stdcall  torrent._.communicate_active_peers, [_torrent]
+                            
+            ;stdcall torrent._.print_torrent, [_torrent]
             jmp     .quit
 
 
@@ -337,16 +356,26 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
     .process_file:
             mov     byte[edi], 0x00
             stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
-            ;stdcall fileops._.create_file, absolute_path, [file_size]
-            stdcall fileops._.create_file, absolute_path, 1024
+            stdcall fileops._.create_file, absolute_path, [file_size]
+            ;stdcall fileops._.create_file, absolute_path, 1024
             cmp     eax, -1
             jne     @f
             DEBUGF 3, "ERROR : Can not create a file\n"
             jmp     .error
 
-        @@: inc     ecx
-            jmp     .next_file   
+        @@: mov     edi, ecx
+            imul    edi,0x1000
+            add     edi, [ebx+torrent.files]
+            add     edi, 4
+            mov     esi, absolute_path
+        @@: cmp     byte[esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+        @@: mov     byte[edi],0x00
 
+            inc     ecx
+            jmp     .next_file   
             
     .single_file:
             mov     esi, [ebx+torrent.files]
@@ -360,12 +389,24 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
 
         @@: mov     byte[edi], 0x00
             stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
-            ;stdcall fileops._.create_file, absolute_path, [file_size]
-            stdcall fileops._.create_file, absolute_path, 1024
+            stdcall fileops._.create_file, absolute_path, [file_size]
+            ;stdcall fileops._.create_file, absolute_path, 1024
             cmp     eax, -1
-            jne     .quit
+            jne     .copy_file_name
             DEBUGF 3, "ERROR : Can not create a file\n"
             jmp     .error
+
+    .copy_file_name:
+            mov     edi, [ebx+torrent.files]
+            add     edi, 4
+            mov     esi, absolute_path
+     @@:    cmp     byte[esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+     @@:    mov     byte[edi],0x00
+            jmp     .quit
+
 
     .error: DEBUGF 3, "ERROR: Procedure ended with error.\n"
             mov     eax, -1
@@ -376,6 +417,88 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
             mov     eax, 0
             pop     edi esi ebx
             ret
+endp
+
+;Allocating memory for downloading pieces 
+proc torrent._.allocate_mem_space _torrent
+            
+            DEBUGF 2, "INFO : In torrent._.allocate_mem_space\n"
+
+            push    ebx ecx edi
+
+            ;Allocating memory
+            mov     ebx, [_torrent]
+            mov     ecx, [ebx + torrent.piece_length]
+            imul    ecx, NUM_PIECES_IN_MEM
+            invoke  mem.alloc, ecx
+            test    eax, eax
+            jnz     @f
+            DEBUGF 3, "ERROR : Not enough memory\n"
+            jmp     .error
+
+      @@:   mov     [ebx + torrent.piece_mem], eax
+
+            ;initializing piece memory status
+            mov     ecx, NUM_PIECES_IN_MEM
+            lea     edi, [ebx + torrent.piece_mem_status]
+    .loop:  cmp     ecx, 0
+            je      .quit
+            mov     eax, MEM_LOCATION_EMPTY
+            stosb
+            mov     eax, 0x00000000
+            stosd
+            dec     ecx
+            jmp     .loop
+
+    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
+            mov     eax, -1
+            pop     edi ecx ebx
+            ret
+
+    .quit : DEBUGF 2, "INFO : Procedure ended successfully\n"
+            mov     eax, 0
+            pop     edi ecx ebx
+            ret
+endp
+
+;Finds an empty memory location for piece downloading
+;Sets piece index , it has been allocated
+proc torrent._.find_first_empty_loc _torrent, _index
+
+            DEBUGF 2, "INFO : In find_first_empty_loc\n"
+
+            push    ebx ecx esi
+            
+            mov     ebx, [_torrent]
+            mov     ecx, 0
+            lea     esi, [ebx + torrent.piece_mem_status]
+
+    .loop:  cmp     ecx, NUM_PIECES_IN_MEM
+            je      .error
+            cmp     byte [esi], MEM_LOCATION_EMPTY
+            je      .location_found
+            add     esi, 5
+            inc     ecx
+            jmp     .loop
+
+    .location_found:
+            mov     byte [esi], MEM_LOCATION_IN_USE
+            inc     esi
+            mov     eax, [_index]
+            stosd
+            mov     eax, [ebx + torrent.piece_length]
+            imul    eax, ecx
+            add     eax, [ebx + torrent.piece_mem]
+            jmp     .quit
+
+    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
+            pop     esi ecx ebx
+            mov     eax, -1
+            ret
+
+    .quit : DEBUGF 2, "INFO : Procedure ended successfully\n"
+            pop     esi ecx ebx
+            ret        
 endp
 
 ;Prints a number at location pointed by EDI
@@ -437,11 +560,10 @@ proc torrent._.print_torrent _torrent
         jecxz   .peers_done
         stdcall torrent._.print_peer, edx
 
-
-        stdcall     peer._.handshake, [_torrent], edx
-        cmp         eax,-1
-        je          @f 
-        stdcall     peer._.communicate, [_torrent], edx, eax
+        stdcall      peer._.handshake, [_torrent], edx
+        ;cmp         eax,-1
+        ;je          @f 
+        ;stdcall     peer._.communicate, [_torrent], edx, eax
         jmp         .peers_done
 
     @@: add     edx, sizeof.peer
@@ -450,14 +572,6 @@ proc torrent._.print_torrent _torrent
   .peers_done:
         DEBUGF 2,'  pieces_length: %d\n',[ebx + torrent.piece_length]
         DEBUGF 2,'  pieces_cnt: %d\n',[ebx + torrent.pieces_cnt]
-;        DEBUGF 2,'  pieces:\n'
-;        mov     ecx, [ebx + torrent.pieces_cnt]
-;        mov     edx, [ebx + torrent.pieces]
-;  .next_piece:
-;        DEBUGF 2,'    %x%x%x%x%x\n',[edx+0x0],[edx+0x4],[edx+0x8],[edx+0xc],[edx+0x10]
-;        add     edx, 20
-;        dec     ecx
-;        jnz     .next_piece
         DEBUGF 2,'  files_cnt: %d\n',[ebx + torrent.files_cnt]
         DEBUGF 2,'  files:\n'
         mov     ecx, [ebx + torrent.files_cnt]
@@ -509,6 +623,116 @@ proc torrent._.print_peer _peer
         DEBUGF 2,'    protocol: %d\n',eax
         pop     edi esi ebx
         ret
+endp
+
+;Time-out based implementation of non-blocking receive
+proc torrent._.nonblocking_recv _socknum, _seconds, _buffer, _bufferlen
+
+            locals
+                timeout     dd ?
+            endl
+
+            push    ebx
+
+            mov     ebx,[_seconds]
+            imul    ebx,100
+            mcall   26,9 
+            add     eax, ebx
+            mov     [timeout], eax
+    .recv_loop:
+            mcall   23, 50
+            cmp     eax, [timeout]
+            jge     .error_timeout
+            mcall   recv,[_socknum],[_buffer],[_bufferlen],MSG_DONTWAIT
+            cmp     eax, -1
+            jne     .quit
+            cmp     ebx, EWOULDBLOCK
+            jne     .error_socket
+            jmp     .recv_loop
+
+    .error_timeout:
+            DEBUGF 3, "ERROR : Recv : Timed Out\n"
+            mov     eax, -1
+            pop     ebx
+            ret
+
+    .error_socket:
+            DEBUGF 3, "ERROR : Recv : Socket Error\n"
+            mov     eax, -1
+            pop     ebx
+            ret            
+
+    .quit:  DEBUGF 2, "INFO : Number of bytes recieved : %d\n", eax
+            pop     ebx
+            ret
+endp
+
+;changes byte order at given location
+proc torrent._.change_byte_order _loc, _len
+            
+            locals
+                    div_constant dd 4
+            endl
+
+
+            push ecx edx esi edi
+
+            mov   esi, [_loc]
+            mov   edi, [_loc]
+            mov   edx, 0
+            mov   eax, [_len]
+            div   [div_constant]
+            mov   ecx, eax
+    .loop:  cmp   ecx, 0
+            je    @f
+            lodsd
+            bswap eax
+            DEBUGF 2, "eax : %x\n", eax
+            stosd
+            dec   ecx
+            jmp  .loop
+
+        @@: cmp   edx, 1
+            jg    @f
+            jmp   .quit
+
+        @@: lodsw
+            xchg  ah, al
+            DEBUGF 2, "ax : %x\n", eax
+            stosw
+
+    .quit:  pop  edi esi edx ecx
+            ret
+endp
+
+;initializes bitfield to zeros
+proc torrent._.init_bitfield _torrent, _loc
+            
+            locals
+                    byte_constant   dd 8
+            endl
+
+            push    ebx ecx edx edi
+
+            mov     edi, [_loc]
+            mov     ebx, [_torrent]
+            mov     eax, [ebx + torrent.pieces_cnt]
+            mov     edx, 0
+            div     [byte_constant]
+            cmp     edx, 0
+            je      @f
+            inc     eax
+
+       @@:  mov     ecx, eax
+            xor     eax, eax
+    .loop:  cmp     ecx, 0
+            je      .quit
+            stosd
+            dec     ecx
+            jmp     .loop
+
+    .quit:  pop     edi edx ecx ebx
+            ret
 endp
 
 

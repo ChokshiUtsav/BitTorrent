@@ -8,15 +8,9 @@
 
 ;A piece is chunk of torrent data which can be verified against hash provided in torrent file
 ;Usually pieces are of size 256kB
-;But piece may range from 256kB to 1024kB depending on total size of torrent.
+;But piece may range from 256kB to 4096kB depending on total size of torrent.
 
 ;Structure for "piece" can be found in torrent.inc
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;; Assumptions ;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;Files from which piece to be read or written are already created.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; Procedure Area;;;;;;;;;;;;;;;;;
@@ -24,6 +18,8 @@
 
 ;fills array of pieces
 proc piece._.fill_all_pieces _torrent, _pieces
+
+            DEBUGF 2, "INFO : In piece._.fill_all_pieces\n"
     
             push        ebx ecx edx edi
 
@@ -47,17 +43,22 @@ proc piece._.fill_all_pieces _torrent, _pieces
             inc         [piece_index]
             jmp         .loop
 
-    .error: mov    eax, -1
-            pop     edi edx ecx ebx
+    .error: DEBUGF 3, "ERROR : Procedure ended with error.\n"
+            mov         eax, -1
+            pop         edi edx ecx ebx
             ret
 
-    .quit:  mov     eax, 0
-            pop     edi edx ecx ebx
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully.\n"
+            mov         eax, 0
+            pop         edi edx ecx ebx
             ret
 endp
 
 ;fills a single piece
 proc piece._.fill_piece _torrent, _pieces
+            
+            ;DEBUGF 2, "INFO : In piece._.fill_piece %d\n",[piece_index]
+
             push        ebx ecx edx edi
 
             ;Initializations
@@ -172,16 +173,35 @@ proc piece._.fill_piece _torrent, _pieces
             inc        [num_offsets]
             jmp        .loop
 
-    .error: mov     eax, -1
-            pop     edi edx ecx ebx
+    .error: ;DEBUGF 3,  "ERROR : Procedure ended with error.\n"
+            mov         eax, -1
+            pop         edi edx ecx ebx
             ret
 
-    .quit:  mov         eax, [num_offsets]
+    .quit:  ;DEBUGF 2,  "INFO : Procedure ended successfully.\n"
+            mov         eax, [num_offsets]
             mov         [ebx+piece.num_offsets],eax
             mov         eax, 0
             pop         edi edx ecx ebx
             ret         
 endp
+
+;returns download status of piece
+proc piece._.get_status _torrent, _index
+            
+            DEBUGF 2, "INFO : In piece._.get_status\n"
+
+            push       ebx esi
+
+            mov        esi, [_index]
+            imul       esi, sizeof.piece
+            mov        ebx, [_torrent]
+            add        esi, [ebx + torrent.pieces]
+            mov        eax, [esi + piece.download_status]
+
+            pop        esi ebx
+            ret
+endp 
 
 ;reads a single piece from file(s) to memory
 proc piece._.get_piece _torrent, _index, _data
@@ -354,40 +374,6 @@ proc piece._.set_piece  _torrent, _index, _data
             pop         esi edi edx ecx ebx
             ret
 endp
-
-;generates hash of piece-data
-proc piece._.generate_hash _data, _len, _hash
-endp
-
-;verifies hash of piece-data against original hash
-proc piece._.verify_hash _torrent, _index, _hash
-            
-            push        ebx ecx edx esi edi
-
-            mov         eax, [_torrent]
-            mov         ebx, [_index]
-            imul        ebx, sizeof.piece
-            add         ebx, [eax+torrent.pieces]
-            mov         esi, [ebx+piece.piece_hash]
-
-            mov         edi, _hash
-            mov         ecx, 20
-            rep         compsb
-
-            cmp         ecx, 0
-            je          .quit
-
-    .error: DEBUGF 3, "ERROR : Hash did not match"
-            mov         eax, -1
-            pop         edi esi edx ecx ebx
-            ret
-
-    .quit: DEBUGF 2, "INFO : Hash matched"
-            mov         eax, 0
-            pop         edi esi edx ecx ebx
-            ret
-endp
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; Data Area;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
