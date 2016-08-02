@@ -263,7 +263,7 @@ proc peer._.communicate _torrent, _peer
             stdcall  message._.process_piece_msg,[_torrent], [_peer], esi, ecx, [length], recv_buffer
             cmp      eax, -1
             je       .error
-            jmp      .quit
+            jmp      .send_msg
 
     .common:
             sub      ecx, [length]

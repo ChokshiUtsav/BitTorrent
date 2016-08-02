@@ -184,6 +184,7 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
 
              locals
                     socketnum   dd ?
+                    filedesc    dd ?
              endl
             
              DEBUGF 2, "INFO : In message._.process_piece_msg\n"
@@ -230,7 +231,6 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
              add      edi, [ebx + peer.piece_location]
              mov      ecx, [_curlen]
              sub      [_len], ecx
-             stdcall torrent._.change_byte_order, esi, ecx
              rep      movsb   
              mov      eax, [ebx + peer.sock_num]
              mov      [socketnum], eax
@@ -245,9 +245,9 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
              jmp      .error 
 
         @@:  mov      ecx, eax
+             DEBUGF 2, "INFO : ecx : %d\n",ecx
              sub      [_len], ecx
              mov      esi,[_buffer]
-             stdcall torrent._.change_byte_order, esi, ecx
              rep      movsb
              jmp      .recieve_loop
 
@@ -263,7 +263,9 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
 
     .piece_download_comp:
              mov     esi, [ebx + peer.piece_location]
-             stdcall torrent._.generate_hash, esi, BLOCKLENGTH, cur_piece_hash
+             mov     edi, f_temp
+
+             stdcall torrent._.generate_hash, esi, PIECELENGTH, cur_piece_hash
              mov     eax, [ebx + peer.cur_piece]
              mov     [ebx + peer.cur_piece], -1
              stdcall piece._.verify_hash, [_torrent], 0, cur_piece_hash
@@ -342,3 +344,4 @@ endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 cur_piece_hash  rb  20
+f_temp          db  '/usbhd0/1/try1',0

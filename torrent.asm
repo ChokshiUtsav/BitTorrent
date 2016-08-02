@@ -632,7 +632,7 @@ proc torrent._.nonblocking_recv _socknum, _seconds, _buffer, _bufferlen
                 timeout     dd ?
             endl
 
-            push    ebx
+            push    ebx ecx edx esi edi
 
             mov     ebx,[_seconds]
             imul    ebx,100
@@ -659,79 +659,11 @@ proc torrent._.nonblocking_recv _socknum, _seconds, _buffer, _bufferlen
     .error_socket:
             DEBUGF 3, "ERROR : Recv : Socket Error\n"
             mov     eax, -1
-            pop     ebx
+            pop     edi esi edx ecx ebx
             ret            
 
     .quit:  DEBUGF 2, "INFO : Number of bytes recieved : %d\n", eax
-            pop     ebx
-            ret
-endp
-
-;changes byte order at given location
-proc torrent._.change_byte_order _loc, _len
-            
-            locals
-                    div_constant dd 4
-            endl
-
-
-            push ecx edx esi edi
-
-            mov   esi, [_loc]
-            mov   edi, [_loc]
-            mov   edx, 0
-            mov   eax, [_len]
-            div   [div_constant]
-            mov   ecx, eax
-    .loop:  cmp   ecx, 0
-            je    @f
-            lodsd
-            bswap eax
-            DEBUGF 2, "eax : %x\n", eax
-            stosd
-            dec   ecx
-            jmp  .loop
-
-        @@: cmp   edx, 1
-            jg    @f
-            jmp   .quit
-
-        @@: lodsw
-            xchg  ah, al
-            DEBUGF 2, "ax : %x\n", eax
-            stosw
-
-    .quit:  pop  edi esi edx ecx
-            ret
-endp
-
-;initializes bitfield to zeros
-proc torrent._.init_bitfield _torrent, _loc
-            
-            locals
-                    byte_constant   dd 8
-            endl
-
-            push    ebx ecx edx edi
-
-            mov     edi, [_loc]
-            mov     ebx, [_torrent]
-            mov     eax, [ebx + torrent.pieces_cnt]
-            mov     edx, 0
-            div     [byte_constant]
-            cmp     edx, 0
-            je      @f
-            inc     eax
-
-       @@:  mov     ecx, eax
-            xor     eax, eax
-    .loop:  cmp     ecx, 0
-            je      .quit
-            stosd
-            dec     ecx
-            jmp     .loop
-
-    .quit:  pop     edi edx ecx ebx
+            pop     edi esi edx ecx ebx
             ret
 endp
 
