@@ -11,6 +11,132 @@
 ;;;;;; Procedure Area ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;Creating file space along with directory structure
+proc torrent._.allocate_file_space _torrent, _downloadlocation
+        
+            push    ebx esi edi
+
+            mov     ebx, [_torrent]
+            cmp     [ebx+torrent.files_cnt], 1
+            je      .single_file
+
+            lea     esi, [ebx+torrent.name]         ;stores directory name in case of multifile.
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], esi, absolute_path
+            stdcall fileops._.create_folder, absolute_path
+            cmp     eax, -1
+            jne     .multi_files
+            DEBUGF 3, "ERROR : Can not create root folder\n"
+            jmp     .error
+
+    .multi_files:
+            ;change download location to newly created root folder path
+            lea     esi,[absolute_path]
+            mov     edi,[_downloadlocation]
+        @@: cmp     byte [esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+        @@: mov     byte[edi], 0x00
+            mov     ecx, 0
+
+    .next_file:
+            cmp     ecx, [ebx+torrent.files_cnt]
+            je      .quit
+
+            mov     esi,ecx
+            imul    esi,0x1000
+            add     esi,[ebx+torrent.files]
+            lodsd
+            mov     [file_size], eax
+            lea     edi, [name]
+    .loop:  cmp     byte[esi], '/'
+            je      .process_dir
+            cmp     byte[esi], 0x00
+            je      .process_file
+            movsb
+            jmp     .loop
+
+    .process_dir: 
+            mov     byte[edi], 0x00
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
+            stdcall fileops._.create_folder, absolute_path
+            cmp     eax, -1
+            jne     @f
+            DEBUGF 3, "ERROR : Can not create root folder\n"
+            jmp     .error
+
+        @@: mov     byte[edi], '/'
+            inc     edi
+            inc     esi
+            jmp     .loop
+
+    .process_file:
+            mov     byte[edi], 0x00
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
+            stdcall fileops._.create_file, absolute_path, [file_size]
+            ;stdcall fileops._.create_file, absolute_path, 1024
+            cmp     eax, -1
+            jne     @f
+            DEBUGF 3, "ERROR : Can not create a file\n"
+            jmp     .error
+
+        @@: mov     edi, ecx
+            imul    edi,0x1000
+            add     edi, [ebx+torrent.files]
+            add     edi, 4
+            mov     esi, absolute_path
+        @@: cmp     byte[esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+        @@: mov     byte[edi],0x00
+
+            inc     ecx
+            jmp     .next_file   
+            
+    .single_file:
+            mov     esi, [ebx+torrent.files]
+            lodsd
+            mov     [file_size], eax
+            lea     edi, [name]
+        @@: cmp     byte[esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+
+        @@: mov     byte[edi], 0x00
+            stdcall fileops._.prepare_abs_path, [_downloadlocation], name, absolute_path
+            stdcall fileops._.create_file, absolute_path, [file_size]
+            ;stdcall fileops._.create_file, absolute_path, 1024
+            cmp     eax, -1
+            jne     .copy_file_name
+            DEBUGF 3, "ERROR : Can not create a file\n"
+            jmp     .error
+
+    .copy_file_name:
+            mov     edi, [ebx+torrent.files]
+            add     edi, 4
+            mov     esi, absolute_path
+     @@:    cmp     byte[esi], 0x00
+            je      @f
+            movsb
+            jmp     @b
+     @@:    mov     byte[edi],0x00
+            jmp     .quit
+
+
+    .error: DEBUGF 3, "ERROR: Procedure ended with error.\n"
+            mov     eax, -1
+            pop     edi esi ebx
+            ret
+
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully.\n"
+            mov     eax, 0
+            pop     edi esi ebx
+            ret
+endp
+
+
 ;Concatenates absolute directrory path and file-name.
 proc fileops._.prepare_abs_path _dirname, _filename, _path
         
@@ -150,6 +276,10 @@ endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;; Data Area ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+absolute_path   rb 4096
+file_size       dd ?
+name            rb 4096
 
 fileinfo_create:
 .subfunction        dd ?
