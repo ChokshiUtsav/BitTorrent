@@ -29,23 +29,24 @@ __DEBUG_LEVEL__ = 1
 ;;;;;;;;;Include Area;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-include 'struct.inc'
-include 'proc32.inc'
-include 'macros.inc'
-include 'libio.inc'
-include 'debug-fdo.inc'
-include 'struct.inc'
+include 'includes/struct.inc'
+include 'includes/proc32.inc'
+include 'includes/macros.inc'
+include 'includes/libio.inc'
+include 'includes/debug-fdo.inc'
+include 'includes/struct.inc'
 include 'torrent.inc'
-include 'libcrash.inc'
-include 'network.inc'
-include 'http.inc'
+include 'includes/libcrash.inc'
+include 'includes/network.inc'
+include 'includes/http.inc'
 
 purge section,mov,add,sub
 
-include 'sha1.asm'
+include 'includes/sha1.asm'
 include 'hash.asm'
 include 'piece.asm'
 include 'fileops.asm'
+include 'bitfield.asm'
 include 'bencode.asm'
 include 'tracker.asm'
 include 'percent.asm'
@@ -461,11 +462,11 @@ proc torrent._.allocate_mem_space _torrent
             ret
 endp
 
-;Finds an empty memory location for piece downloading
-;Sets piece index , it has been allocated
-proc torrent._.find_first_empty_loc _torrent, _index
+;Finds an first memory location of given status
+;Sets piece index and status
+proc torrent._.get_mem_loc _torrent, _index, _status
 
-            DEBUGF 2, "INFO : In find_first_empty_loc\n"
+            DEBUGF 2, "INFO : In torrent._.get_mem_empty_loc\n"
 
             push    ebx ecx esi
             
@@ -475,7 +476,8 @@ proc torrent._.find_first_empty_loc _torrent, _index
 
     .loop:  cmp     ecx, NUM_PIECES_IN_MEM
             je      .error
-            cmp     byte [esi], MEM_LOCATION_EMPTY
+            mov     eax, [_status]
+            cmp     byte [esi], al
             je      .location_found
             add     esi, 5
             inc     ecx
@@ -485,7 +487,7 @@ proc torrent._.find_first_empty_loc _torrent, _index
             mov     byte [esi], MEM_LOCATION_IN_USE
             inc     esi
             mov     eax, [_index]
-            stosd
+            mov     dword[esi], eax
             mov     eax, [ebx + torrent.piece_length]
             imul    eax, ecx
             add     eax, [ebx + torrent.piece_mem]
@@ -500,6 +502,62 @@ proc torrent._.find_first_empty_loc _torrent, _index
             pop     esi ecx ebx
             ret        
 endp
+
+;prints piece_mem_status
+proc torrent._.print_piece_mem_status _torrent
+
+            push    eax ebx ecx esi
+            
+            mov     ebx, [_torrent]
+            mov     ecx, 0
+            lea     esi, [ebx + torrent.piece_mem_status]
+
+    .loop:  cmp     ecx, NUM_PIECES_IN_MEM
+            je      .quit
+            lodsb
+            DEBUGF 2, "INFO : status %d\n", eax
+            lodsd
+            DEBUGF 2, "INFO : index %d\n", eax
+            inc     ecx
+            jmp     .loop
+
+    .quit:  pop     esi ecx ebx eax
+            ret
+endp
+
+;sets piece_mem_status
+proc torrent._.set_piece_mem_status _torrent, _index, _status
+            
+            DEBUGF 2, "INFO : torrent._.set_piece_mem_status\n"                
+
+            push    ebx ecx esi
+            
+            mov     ebx, [_torrent]
+            mov     ecx, 0
+            lea     esi, [ebx + torrent.piece_mem_status]
+
+    .loop:  cmp     ecx, NUM_PIECES_IN_MEM
+            je      .error
+            inc     esi
+            lodsd
+            cmp     eax, [_index]
+            jne     @f
+            sub     esi, 5
+            mov     eax, [_status]
+            mov     byte[esi], al
+            jmp     .quit
+     @@:    inc     ecx
+            jmp     .loop
+
+    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
+            pop     esi ecx ebx
+            ret
+
+    .quit : DEBUGF 2, "INFO : Procedure ended successfully\n"
+            pop     esi ecx ebx
+            ret     
+endp
+
 
 ;Prints a number at location pointed by EDI
 proc torrent._.print_num _num
@@ -666,7 +724,6 @@ proc torrent._.nonblocking_recv _socknum, _seconds, _buffer, _bufferlen
             pop     edi esi edx ecx ebx
             ret
 endp
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;Import & Export Area;;;;;;;;;;;;

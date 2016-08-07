@@ -159,23 +159,15 @@ endp
 ;processes have message : sets corresponding bit in peer's bit-field. 
 proc message._.process_have_msg _peer, _index
                 
-                locals
-                    byte_constant   dd 8
-                endl
-
                 DEBUGF 2, "INFO : In message._.process_have_msg\n"
 
-                push    ebx ecx edx esi
+                push    ebx esi
 
-                mov     edx, 0
-                mov     eax, dword [_index]             ;index/8 
-                div     [byte_constant]
-                mov     ebx, [_peer]                    ;moving to byte specified at eax=quotient
+                mov     ebx, [_peer]
                 lea     esi, [ebx + peer.bitfield]
-                add     eax, esi
-                bts     word [eax], dx                  ;setting bit specified at edx = remainder
+                stdcall bitfield._.set_bit, esi, [_index]
                 
-                pop     esi edx ecx ebx
+                pop     esi ebx
                 ret
 endp
 
@@ -245,7 +237,6 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
              jmp      .error 
 
         @@:  mov      ecx, eax
-             DEBUGF 2, "INFO : ecx : %d\n",ecx
              sub      [_len], ecx
              mov      esi,[_buffer]
              rep      movsb
@@ -253,25 +244,59 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
 
     .prepare_data:         
              ;preparing data for next request message
-             inc    [ebx + peer.cur_block]
-             DEBUGF 2, "INFO : Block number %d\n",[ebx + peer.cur_block]
-             mov    ecx, [ebx + peer.cur_block]
-             mov    eax, [_torrent]
-             cmp    ecx, [eax + torrent.num_blocks]
-             je     .piece_download_comp
-             jmp    .quit
+             inc     [ebx + peer.cur_block]
+             mov     eax, [ebx + peer.cur_piece]
+             mov     ecx, [ebx + peer.cur_block]
+             DEBUGF 2, "INFO : Piece %d : Block %d\n",eax, ecx
+             stdcall piece._.set_num_blocks, [_torrent], eax,  ecx
+             mov     eax, [_torrent]
+             cmp     ecx, [eax + torrent.num_blocks]
+             je      .piece_download_comp
+             jmp     .quit
 
     .piece_download_comp:
-             mov     esi, [ebx + peer.piece_location]
-             mov     edi, f_temp
 
-             stdcall torrent._.generate_hash, esi, PIECELENGTH, cur_piece_hash
+             ;verifying piece hash
+             mov     edx, [_torrent]
+             mov     eax, [edx + torrent.piece_length]
+             mov     esi, [ebx + peer.piece_location]
+             stdcall torrent._.generate_hash, esi, eax, cur_piece_hash
              mov     eax, [ebx + peer.cur_piece]
-             mov     [ebx + peer.cur_piece], -1
-             stdcall piece._.verify_hash, [_torrent], 0, cur_piece_hash
+             stdcall piece._.verify_hash, [_torrent], eax, cur_piece_hash
              cmp     eax, -1
-             je      .error 
-             jmp     .quit
+             je      .error
+
+             ;writing piece to file
+             mov     eax, [ebx + peer.cur_piece]
+             mov     esi, [ebx + peer.piece_location]
+             stdcall piece._.set_piece, [_torrent], eax, esi
+             cmp     eax, -1
+             je      .error
+
+             ;changing piece status
+             mov     eax, [ebx + peer.cur_piece]
+             stdcall piece._.set_status, [_torrent], eax, BT_PIECE_DOWNLOAD_COMPLETE
+
+             ;setting torrent bitfield
+             mov     ecx, [ebx + peer.cur_piece]
+             mov     eax, [_torrent]
+             lea     edx, [eax + torrent.bitfield]
+             stdcall bitfield._.set_bit, edx, ecx
+
+             ;changing piece memory status
+             mov     eax, [ebx + peer.cur_piece]
+             stdcall torrent._.set_piece_mem_status, [_torrent], eax, MEM_LOCATION_FILLED 
+
+             ;setting torrent downloaded and left
+             mov     ebx, [_torrent]
+             inc     [ebx + torrent.downloaded]
+
+             DEBUGF 2, "INFO : torrent downloaded %d\n", [ebx + torrent.downloaded]  
+
+             ;preparing data for next piece
+             mov      ebx, [_peer]
+             mov      [ebx + peer.cur_piece], -1
+             jmp      .quit
         
     .error:  DEBUGF 3, "ERROR : Procedure ended with error\n"
              pop      edi esi edx ecx ebx
@@ -300,11 +325,20 @@ proc message._.prep_request_msg _torrent, _peer, _msg
             DEBUGF 3, "ERROR : No piece available\n"
             jmp      .error
 
-        @@: stdcall  torrent._.find_first_empty_loc, [_torrent], eax
+        @@: mov      [ebx + peer.cur_piece], eax
+            mov      [ebx + peer.cur_block], 0
+            stdcall  torrent._.get_mem_loc, [_torrent], eax, MEM_LOCATION_EMPTY
             cmp       eax, -1
             jne       @f
-            DEBUGF 3, "ERROR : Not enough memory to start downloading a piece\n"
-            jmp      .error
+            DEBUGF 3, "ERROR : No empty location found\n"
+
+            mov      eax, [ebx + peer.cur_piece]
+            stdcall  torrent._.get_mem_loc, [_torrent], eax , MEM_LOCATION_FILLED
+            cmp      eax, -1
+            jne      @f
+            stdcall  torrent._.print_piece_mem_status, [_torrent]
+            DEBUGF 3, "ERROR : No location found for torrent downloading\n"
+            jmp      .error         
 
         @@: mov      [ebx + peer.piece_location], eax
 
@@ -344,4 +378,3 @@ endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 cur_piece_hash  rb  20
-f_temp          db  '/usbhd0/1/try1',0

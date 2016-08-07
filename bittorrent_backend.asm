@@ -23,16 +23,15 @@ __DEBUG_LEVEL__ = 1
 ;;;;;;;;;;;;Include Area;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-include 'struct.inc'
-include 'proc32.inc'
-include 'macros.inc'
-include 'config.inc'
-include 'network.inc'
-include 'debug-fdo.inc'
-include 'dll.inc'
-include 'libio.inc'
+include 'includes/struct.inc'
+include 'includes/proc32.inc'
+include 'includes/macros.inc'
+include 'includes/config.inc'
+include 'includes/network.inc'
+include 'includes/debug-fdo.inc'
+include 'includes/dll.inc'
+include 'includes/libio.inc'
 include 'torrent.inc'
-;include 'libcrash.inc'
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

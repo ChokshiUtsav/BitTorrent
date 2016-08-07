@@ -1,4 +1,4 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -188,15 +188,21 @@ proc peer._.communicate _torrent, _peer
             DEBUGF 2, "INFO : In peer._.communicate\n"
             push    ebx ecx edx esi edi
 
-            ;preparing time for time-out
-            mcall   26, 9
-            add     eax, PEER_TIMEOUT*100
-            mov     [timeout], eax
-
             ;filling socketnum
             mov     ebx, [_peer]
             mov     eax, [ebx+peer.sock_num]
             mov     [socketnum], eax
+
+            ;checking keep-alive time limit exceeded?
+            mcall   26, 9
+            sub     eax, [ebx + peer.last_seen]
+            cmp     eax, KEEPALIVE_TIME
+            jge     .close
+
+            ;preparing time for time-out
+            mcall   26, 9
+            add     eax, PEER_TIMEOUT*100
+            mov     [timeout], eax
 
     .timer_loop:
             mcall   26, 9
@@ -222,7 +228,14 @@ proc peer._.communicate _torrent, _peer
             lodsb
             mov     [type], al                ;type of message
             dec     ecx
-            dec     [length]                  ;as type of message is included in total length
+
+            ;keep-alive message
+            cmp     [length], 0
+            jne      @f
+            DEBUGF 2, "INFO : Keep-alive msg\n"
+            jmp     .quit
+
+    @@:     dec     [length]                  ;as type of message is included in total length
 
             ;Bitfield message
             cmp     [type], BT_PEER_MSG_BITFIELD
@@ -270,7 +283,6 @@ proc peer._.communicate _torrent, _peer
             jmp      .buffer_loop
 
     .send_msg:
-            DEBUGF 2, "INFO : before send msg\n"
             mov      ebx, [_peer]        
             cmp     [ebx + peer.is_choking], 0
             jne     .timer_loop    
@@ -286,33 +298,40 @@ proc peer._.communicate _torrent, _peer
             DEBUGF 3, "ERROR: send %d\n",ebx
             jmp      .error
 
-    .error: DEBUGF 2, "INFO : Procedure ended with error\n"
+
+    .close: mcall    close, [socketnum]
+            mov      [ebx + peer.sock_num], -1
+            DEBUGF 3, "ERROR : keep-alive timeout\n"
+
+    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
+            mov     eax, -1
             pop     edi esi edx ecx ebx
             ret
 
     .quit_timeout:
-            DEBUGF 3, "INFO : Timeout for peer\n"                    
+            DEBUGF 3, "ERROR : Timeout for peer\n"                    
 
     .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
+            mcall   26, 9
+            mov     [ebx + peer.last_seen], eax
             pop     edi esi edx ecx ebx
             ret
 endp
 
 ;Finds first available piece
 ;Availbale piece satisfies following three conditions :
-;1) Peer has the piece available (Check using peer's bitfield)
-;2) Client does not have the piece (Check using torrent's bitfield)
-;3) Piece is not being downloaded by other peer (Check using piece's download_status)
+;1) Peer has the piece available (Check using peer.bitfield)
+;2) Client does not have the piece (Check using torrent.bitfield)
+;3) Piece is not being downloaded by other peer (Check using piece.download_status)
 
 proc peer._.find_first_avl_piece _torrent, _peer
             
             locals
-                    byte_constant   dd 8
                     size            dd ?
                     index           dd ?
             endl
 
-            DEBUGF 2, "INFO : In find_first_avl_piece _torrent\n"
+            DEBUGF 2, "INFO : In find_first_avl_piece\n"
             push    ebx ecx edx esi edi
 
             mov     eax, [_peer]
@@ -321,9 +340,10 @@ proc peer._.find_first_avl_piece _torrent, _peer
             lea     esi, [ebx + torrent.bitfield]
 
             mov     eax, [ebx + torrent.pieces_cnt]
-            mov     edx, 0
-            div     [byte_constant]
+            shr     eax, 3
             mov     [size], eax
+            mov     edx, [ebx + torrent.pieces_cnt]
+            and     dx, 7
 
             mov     ecx, 0
     .loop:  cmp     ecx, [size]
@@ -333,50 +353,48 @@ proc peer._.find_first_avl_piece _torrent, _peer
             mov     al, byte [esi]
             mov     bl, byte [edi]
             not     ax
-            and     ax, bx
-            bsf     bx, ax
-            DEBUGF 2, "INFO : first set bit : %d\n",ebx
+            and     bx, ax
+
+    @@:     bsf     ax, bx
             jz      @f
 
-            imul     ecx, 8
-            mov     [index], ecx
-            add     [index], ebx
-            DEBUGF 2, "INFO : piece index : %d\n",[index]
+            mov      [index], ecx
+            shl      [index], 3
+            add      [index], eax
             stdcall  piece._.get_status, [_torrent], [index]
             cmp      eax, BT_PIECE_DOWNLOAD_NOT_STARTED
-            je      .piece_found
+            je       .quit
+            bsf      ax, bx
+            btr      bx, ax
+            jmp      @b
 
      @@:    inc     ecx
-            add     esi, 8
-            add     edi, 8
+            add     esi, 1
+            add     edi, 1
             jmp     .loop
 
     .check_lastbyte:
-            cmp     edx, 0
-            je      .error
-            mov     eax, 0
-            mov     ebx, 0
-            mov     al, byte [esi]
-            mov     bl, byte [edi]
-            not     ax
-            and     ax, bx
-            bsf     bx, ax
-            jz      .error
-            cmp     ebx, edx
-            jg      .error
+            cmp      edx, 0
+            je       .error
+            mov      eax, 0
+            mov      ebx, 0
+            mov      al, byte [esi]
+            mov      bl, byte [edi]
+            not      ax
+            and      bx, ax
+    @@:     bsf      ax, bx
+            jz       .error
+            cmp      bx, dx
+            jg       .error
             imul     ecx, 8
-            mov     [index], ecx
-            add     [index], ebx
+            mov      [index], ecx
+            add      [index], eax
             stdcall  piece._.get_status, [_torrent], [index]
             cmp      eax, BT_PIECE_DOWNLOAD_NOT_STARTED
-            jne     .error
-
-    .piece_found:
-            mov     ecx, [index]
-            mov     ebx, [_peer]
-            mov     [ebx + peer.cur_piece], ecx
-            mov     [ebx + peer.cur_block], 0
-            jmp     .quit
+            je       .quit
+            bsf      ax, bx
+            btr      bx, ax
+            jmp      @b
 
     .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
             mov     eax, -1

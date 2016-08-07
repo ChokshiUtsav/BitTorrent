@@ -110,6 +110,43 @@ proc fileops._.create_folder _name
             ret 
 endp
 
+;writes to a file
+proc fileops._.write_to_file _name, _size, _data
+            
+            DEBUGF 2, "INFO: In fileops._.write_to_file\n"
+            push        ebx ecx
+
+            mov         eax, [_name]
+            mov         [fileinfo_create.name],eax
+
+            ;creating a file
+            mov         [fileinfo_create.subfunction], 3
+            mov         [fileinfo_create.filesize_low], 0
+            mov         eax, [_size]
+            mov         [fileinfo_create.reserved1], eax
+            mov         eax, [_data]
+            mov         [fileinfo_create.reserved2], eax
+            mov         eax, [_name]
+            mov         [fileinfo_create.name],eax
+            mcall       70, fileinfo_create
+            cmp         eax, 0
+            je          @f
+            DEBUGF 2,   "ERROR : Problem writing to a file.\n"
+            jmp         .error
+
+    .error: DEBUGF 2,   "ERROR: Procedure ended with error\n"
+            mov         eax, -1
+            pop         ecx ebx
+            ret
+
+    .quit:  DEBUGF 2, "INFO: Procedure ended successfully\n"    
+            mov         eax, 0
+            pop         ecx ebx
+            ret 
+            
+
+endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;; Data Area ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

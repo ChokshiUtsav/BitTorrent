@@ -201,7 +201,43 @@ proc piece._.get_status _torrent, _index
 
             pop        esi ebx
             ret
-endp 
+endp
+
+;sets download status of piece
+proc piece._.set_status _torrent, _index, _status
+            
+            DEBUGF 2, "INFO : In piece._.set_status\n"
+
+            push       ebx esi
+
+            mov        esi, [_index]
+            imul       esi, sizeof.piece
+            mov        ebx, [_torrent]
+            add        esi, [ebx + torrent.pieces]
+            mov        eax, [_status]
+            mov        [esi + piece.download_status], eax 
+
+            pop        esi ebx
+            ret
+endp  
+
+;sets block number of piece
+proc piece._.set_num_blocks _torrent, _index, _numblocks
+            
+            DEBUGF 2, "INFO : In piece._.set_num_blocks\n"
+
+            push       ebx esi
+
+            mov        esi, [_index]
+            imul       esi, sizeof.piece
+            mov        ebx, [_torrent]
+            add        esi, [ebx + torrent.pieces]
+            mov        eax, [_numblocks]
+            mov        [esi + piece.num_blocks_downloaded], eax
+
+            pop        esi ebx
+            ret
+endp
 
 ;reads a single piece from file(s) to memory
 proc piece._.get_piece _torrent, _index, _data
@@ -292,6 +328,8 @@ endp
 
 ;writes a single piece from memory to file(s)
 proc piece._.set_piece  _torrent, _index, _data
+            
+            DEBUGF 2, "INFO : In piece._.set_piece\n"
     
             push        ebx ecx edx edi esi
 
@@ -302,7 +340,7 @@ proc piece._.set_piece  _torrent, _index, _data
 
             ;Initializations
             mov         [num_offsets], 0
-            lea         edi, [_data]
+            mov         edi, [_data]
 
     .loop:  mov         ecx, [ebx+piece.num_offsets]
             cmp         ecx, [num_offsets]
@@ -363,17 +401,19 @@ proc piece._.set_piece  _torrent, _index, _data
             inc         [num_offsets]
             jmp         .loop   
 
-    .error: cmp         [filedesc], 0
+    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
+            cmp         [filedesc], 0
             jz           @f
             invoke      file.close, [filedesc]
         @@: mov         eax, -1
             pop         esi edi edx ecx ebx
             ret
 
-    .quit:
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
             pop         esi edi edx ecx ebx
             ret
 endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; Data Area;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

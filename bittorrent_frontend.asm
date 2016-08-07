@@ -22,16 +22,16 @@ __DEBUG_LEVEL__ = 1
 ;;;;;;;;;Include Area;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-include 'struct.inc'
-include 'proc32.inc'
-include 'macros.inc'
-include 'config.inc'
-include 'network.inc'
-include 'debug-fdo.inc'
-include 'dll.inc'
-include 'box_lib.mac'
-include 'load_lib.mac'
-include 'optionbox.inc'
+include 'includes/struct.inc'
+include 'includes/proc32.inc'
+include 'includes/macros.inc'
+include 'includes/config.inc'
+include 'includes/network.inc'
+include 'includes/debug-fdo.inc'
+include 'includes/dll.inc'
+include 'includes/box_lib.mac'
+include 'includes/load_lib.mac'
+include 'includes/optionbox.inc'
 @use_library              ;use load lib macros
 version_op
 use_option_box

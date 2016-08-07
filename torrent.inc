@@ -5,7 +5,9 @@ MAX_PEERS_TOTAL       = 200
 NUM_PIECES_IN_MEM     = 10
 
 RECV_TIMEOUT       = 1          ;in seconds
-PEER_TIMEOUT       = 60         ;in seconds
+PEER_TIMEOUT       = 1800       ;in seconds
+KEEPALIVE_TIME     = 7200       ;in seconds = 2 mins
+TRACKER_TIMEOUT    = 1800       ;in seconds = 30 mins
 
 BT_TRACKER_PROTOCOL_TCP  = 0    ; bep_0003: The BitTorrent Protocol Specification
 BT_TRACKER_PROTOCOL_UDP  = 1    ; bep_0015: UDP Tracker Protocol for BitTorrent
@@ -57,7 +59,6 @@ REQUEST_MSGLEN   = 17
 BUFFERSIZE       = 4096
 BLOCKLENGTH      = 16384        ;2^14 : standard block size
 
-
 struct ipc_buffer
         locked   dd ?
         occupied dd ?
@@ -96,7 +97,6 @@ struct peer
         cur_piece       dd ?     ;index of piece being downloaded by peer
         cur_block       dd ?     ;index of block(within piece) being downloaded by peer
         piece_location  dd ?     ;location of cur_piece within piece_mem
-
         bitfield        rb 1024
 ends
 
@@ -132,8 +132,8 @@ struct torrent
         uploaded         dd ?
         downloaded       dd ?
         left             dd ?
-        piece_mem        dd ?    ;array of pieces kept in memory [each element = piece size]
         piece_mem_status rb NUM_PIECES_IN_MEM*5    ;array of status of pieces kept in memory
+        piece_mem        dd ?    ;array of pieces kept in memory [each element = piece size]
         bitfield         rb 1024
         pid              dd ?
         parent_pid       dd ?

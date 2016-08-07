@@ -50,12 +50,12 @@ proc piece._.verify_hash _torrent, _index, _hash
             cmp         ecx, 0
             je          .quit
 
-    .error: DEBUGF 3,  "ERROR : Hash did not match"
+    .error: DEBUGF 3,  "ERROR : Hash did not match\n"
             mov         eax, -1
             pop         edi esi edx ecx ebx
             ret
 
-    .quit:  DEBUGF 2,   "INFO : Hash matched"
+    .quit:  DEBUGF 2,   "INFO : Hash matched\n"
             mov         eax, 0
             pop         edi esi edx ecx ebx
             ret
