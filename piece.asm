@@ -6,8 +6,8 @@
 ;Methods of this file mainly involves IO and file related operation.
 ;These methods are useful as part of pre-processing and post-processing and do not confront any network related operations.
 
-;A piece is chunk of torrent data which can be verified against hash provided in torrent file
-;Usually pieces are of size 256kB
+;A piece is chunk of torrent data which can be verified against hash provided in torrent file.
+;Usually pieces are of size 256kB.
 ;But piece may range from 256kB to 4096kB depending on total size of torrent.
 
 ;Structure for "piece" can be found in torrent.inc
@@ -16,7 +16,14 @@
 ;;;;;;; Procedure Area;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;fills array of pieces
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : fills array of pieces in torrent structure.
+;Input     : pointer to torrent data structure and pointer to pieces
+;Outcome   : array of pieces filled with details
+;ErrorCode : eax = 0  -> success
+             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc piece._.fill_all_pieces _torrent, _pieces
 
             DEBUGF 2, "INFO : In piece._.fill_all_pieces\n"
@@ -54,7 +61,14 @@ proc piece._.fill_all_pieces _torrent, _pieces
             ret
 endp
 
-;fills a single piece
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : fills a single piece with index = [piece_index]
+;Input     : pointer to torrent data structure and pointer to pieces
+;Outcome   : a piece structure filled with details
+;ErrorCode : eax = 0  -> success
+             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;             
+
 proc piece._.fill_piece _torrent, _pieces
             
             ;DEBUGF 2, "INFO : In piece._.fill_piece %d\n",[piece_index]
@@ -186,7 +200,14 @@ proc piece._.fill_piece _torrent, _pieces
             ret         
 endp
 
-;returns download status of piece
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : returns download status of piece
+;Input     : pointer to torrent data structure and index of piece
+;Outcome   : eax = download_status
+;Note      : Download status can be one of this :
+             BT_PIECE_DOWNLOAD_NOT_STARTED/BT_PIECE_DOWNLOAD_IN_PROGRESS/ BT_PIECE_DOWNLOAD_COMPLETE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc piece._.get_status _torrent, _index
             
             DEBUGF 2, "INFO : In piece._.get_status\n"
@@ -202,6 +223,11 @@ proc piece._.get_status _torrent, _index
             pop        esi ebx
             ret
 endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : sets download status of piece
+;Input     : pointer to torrent data structure , index of piece, download_status 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;sets download status of piece
 proc piece._.set_status _torrent, _index, _status
@@ -221,6 +247,11 @@ proc piece._.set_status _torrent, _index, _status
             ret
 endp  
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : sets number of blocks, downloaded, for a piece
+;Input     : pointer to torrent data structure , index of piece, number of blocks 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;sets block number of piece
 proc piece._.set_num_blocks _torrent, _index, _numblocks
             
@@ -239,7 +270,14 @@ proc piece._.set_num_blocks _torrent, _index, _numblocks
             ret
 endp
 
-;reads a single piece from file(s) to memory
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : reads a single piece from file(s) to memory
+;Input     : pointer to torrent data structure, index of piece,pointer to location that contains data
+;Outcome   : memory location pointed by data is filled with piece data
+;ErrorCode : eax = 0  -> success
+             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc piece._.get_piece _torrent, _index, _data
 
             push        ebx ecx edx edi esi
@@ -313,20 +351,28 @@ proc piece._.get_piece _torrent, _index, _data
             inc         [num_offsets]
             jmp         .loop   
 
-    .error: cmp         [filedesc], 0
-            jz           @f
+    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
+            cmp         [filedesc], 0
+            jz          @f
             invoke      file.close, [filedesc]
         @@: mov         eax, -1
             pop         esi edi edx ecx ebx
             ret
 
-    .quit:
+    .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
+            mov         eax, 0
             pop         esi edi edx ecx ebx
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : ;writes a single piece from memory to file(s)
+;Input     : pointer to torrent data structure , index of piece, pointer to location where piece data needs to be written
+;Outcome   : files, to which piece belongs, are written
+;ErrorCode : eax = 0  -> success
+             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;writes a single piece from memory to file(s)
 proc piece._.set_piece  _torrent, _index, _data
             
             DEBUGF 2, "INFO : In piece._.set_piece\n"
@@ -410,6 +456,7 @@ proc piece._.set_piece  _torrent, _index, _data
             ret
 
     .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
+            mov         eax, 0
             pop         esi edi edx ecx ebx
             ret
 endp
