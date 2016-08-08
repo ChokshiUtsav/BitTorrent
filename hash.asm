@@ -8,7 +8,12 @@
 ;;;;;;; Procedure Area;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;generates SHA1 hash of data
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc  : generates SHA1 hash of data
+;Input : Pointer to data , length of data and pointer to location where 20 byte hash can be stored
+;Outcome : Stores hash of data at location pointed by _hash 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.generate_hash _data, _len, _hash
             
             DEBUGF 2, "INFO : In torrent._.generate_hash\n"
@@ -29,7 +34,13 @@ proc torrent._.generate_hash _data, _len, _hash
             ret
 endp
 
-;verifies hash of piece-data against original hash
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : verifies hash of piece-data against original hash
+;Input   : Pointer to torrent data structure, piece-index and pointer to hash
+;Outcome : eax = 0  -> Success (Hash matched)
+           eax = -1 -> Error (Hash did not match)  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc piece._.verify_hash _torrent, _index, _hash
 
             DEBUGF 2, "INFO : In piece._.ver_hash\n"
@@ -42,8 +53,6 @@ proc piece._.verify_hash _torrent, _index, _hash
             add         ebx, [eax + torrent.pieces]
             lea         esi, [ebx + piece.piece_hash]
             mov         edi, [_hash]
-            DEBUGF 2,"INFO : piece hash :%x%x%x%x%x\n'",[esi+0x0],[esi+0x4],[esi+0x8],[esi+0xc],[esi+0x10]
-            DEBUGF 2,"INFO : generated hash :%x%x%x%x%x\n'",[edi+0x0],[edi+0x4],[edi+0x8],[edi+0xc],[edi+0x10]
             mov         ecx, 20
             rep         cmpsb
 
@@ -55,7 +64,7 @@ proc piece._.verify_hash _torrent, _index, _hash
             pop         edi esi edx ecx ebx
             ret
 
-    .quit:  DEBUGF 2,   "INFO : Hash matched\n"
+    .quit:  DEBUGF 2,  "INFO : Hash matched\n"
             mov         eax, 0
             pop         edi esi edx ecx ebx
             ret
