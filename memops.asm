@@ -3,14 +3,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;This file contains methods related to managing memory for pieces which has been kept in main memory
-;Methods of this file mainly invoves finding suitable empty location for piece download/upload.
-;These methods are useful while torrent download is in progress.
+;Methods of this file mainly invoves finding suitable memory location for piece download/upload.
+;These methods are useful while torrent downloading.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;; Procedure Area ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Allocating memory for downloading pieces 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Allocating memory for keeping pieces in memory 
+;Input     : pointer to torrent data structure
+;Outcome   : Sets piece_mem = pointer to memory allocated for NUM_PIECES_IN_MEM 
+             Initializes piece_mem_status array with MEM_LOCATION_EMPTY
+;ErrorCode : eax = 0  -> success
+             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.allocate_mem_space _torrent
             
             DEBUGF 2, "INFO : In torrent._.allocate_mem_space\n"
@@ -52,8 +60,14 @@ proc torrent._.allocate_mem_space _torrent
             ret
 endp
 
-;Finds an first memory location with given status
-;Sets piece index and status , if found
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Finds first memory location with given status
+;Input     : pointer to torrent data structure, piece-index and status
+;Outcome   : If memory location is found,sets piece-index and status at corresponding   piece_mem_status 
+;ErrorCode : eax = 0  -> success(Memory location with given status found)
+             eax = -1 -> error  (Memory location with given status not found)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.get_mem_loc _torrent, _index, _status
 
             DEBUGF 2, "INFO : In torrent._.get_mem_empty_loc\n"
@@ -93,7 +107,14 @@ proc torrent._.get_mem_loc _torrent, _index, _status
             ret        
 endp
 
-;sets piece index and download/upload status for memory location
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Sets piece index and download/upload status for memory location
+;Input     : pointer to torrent data structure, piece-index and status
+;Outcome   : Finds piece-index in piece_mem_status and sets status
+;ErrorCode : eax = 0  -> success(Given index found in array)
+             eax = -1 -> error  (Given index not found in array)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.set_piece_mem_status _torrent, _index, _status
             
             DEBUGF 2, "INFO : torrent._.set_piece_mem_status\n"                
@@ -126,7 +147,11 @@ proc torrent._.set_piece_mem_status _torrent, _index, _status
             ret     
 endp
 
-;prints piece_mem_status
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : prints piece_mem_status array
+;Input     : pointer to torrent data structure
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.print_piece_mem_status _torrent
 
             push    eax ebx ecx esi
