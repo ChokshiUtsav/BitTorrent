@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Hindi Text Processing Framework by Utsav Chokshi" />
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+    <title>Hindi Framework : A text processing framework</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/arushidogra/IRE_MajorProject">View on GitHub</a>
+
+          <h1 id="project_title">Hindi Framework</h1>
+          <h2 id="project_tagline">A text processing framework for Hindi Language</h2>
+          <section id="downloads">
+            <a class="zip_download_link" href="https://github.com/arushidogra/IRE_MajorProject/zipball/master">Download this project as a .zip file</a>
+            <a class="tar_download_link" href="https://github.com/arushidogra/IRE_MajorProject/tarball/master">Download this project as a tar.gz file</a>
+          </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Synopsis</h1>
+        <p>Hindi Framework provides following functionality : </p>
+	<ul>
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Parser"> JSON Parsing </a></Strong></li>	
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Tokeniser"> Tokenization</a></Strong></li>
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Tokeniser"> Sentence Breaker</a></Strong></li>
+        <li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Tokeniser"> StopWord Detection</a></Strong></li>
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Stemmer"> Stemming</a></Strong></li>
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/POSTagger"> POS Tagging</a></Strong></li>
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Variation"> Identifying Variations</a></Strong></li> 
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/NER"> Named Entity Recognition</a></Strong></li> 
+	<li><Strong><a href="https://github.com/arushidogra/IRE_MajorProject/tree/master/Categoriser"> Categorization</a></Strong></li> 	
+	</ul>
+        <h1>Introduction</h1>
+        <p>
+	Hindi is morphologically very rich language. It has very subtle variations in writings as well.So a generalized text processing framework would not fit for hindi. Hence, we have developed a text processing framework , specifically for hindi language with all basic functionality implemented.
+        </p>
+        <p> Such framework is useful for building responsive UIs for hindi language and prepares ground for hindi language based applications.</p>	
+	<h2>Dataset Used</h2>
+        <p><a href="https://www.dropbox.com/s/h5sgwg3dfdoqfxo/hi.data?dl"> Testing Dataset </a></p>
+        <h2>Description of Modules</h2>
+
+        <p>We now describe each module/functionality briefly along with technologies or algorithms used.</p>
+
+        <h3><u>JSON Parsing</u></h3>
+        <p>Dataset used for testing is in JSON format. So our parser creates seperate data-file for each key in JSON file.</p>
+	<p><strong> Sample Data : </strong> 
+	<code>
+	{"url":"http://www.jagran.com/uttarakhand/nainital-ureda-launched-suryoday-svarojagaar-yojana-in-hill-area-13674493.html?src\u003dLNewsPriority2","title":"उरेडा ने पर्वतीय इलाकों में शुरू की सूर्योदय स्‍वरोजगार योजना","text":"हल्द्वानी (नैनीताल)। सूरज की किरणें अब पहाड़ों पर खाली हाथ नहीं आएगी। बेरोजगारी के दर्द के कराहते लोगों के लिए ये किरणें अपने साथ बेगारी का इलाज लेकर आएगी। ","lang":"hi","categories":["hi_UTTARAKHAND_ALL"],"mCategories":["hi::UTTARAKHAND_ALL"],"categoryTopics":{"uttarakhand":1.0},"mCategoryTopics":{"uttarakhand":1.0},"keywords":"Uttarakhand, UREDA, Yojana, Svarojagaar, Power Station, Hill Area, Nainital, Haldwani, Self-employed"}
+	</code>
+	</p>
+	<br/>
+        <h3><u>Tokenization</u></h3>
+        <p>Tokenization is the process of breaking a stream of text up into words,phrases,symbols or other meaningful elements called Tokens</p>
+        <p>For Tokenizing, we have separated the text on the basis of space so that dates, designations, abbreviations retain their original form.</p>
+        <p><Strong>Tokens :</strong><p>
+        <p>
+	<code>
+	{सूरज,की,किरणें,अब,पहाड़ों,पर,खाली,हाथ,नहीं,आएगी,बेरोजगारी,के,दर्द,के,कराहते,लोगों,के,लिए,ये,किरणें,अपने,साथ,बेगारी,का,इलाज,लेकर,आएगी}
+        </code>        
+	</p>
+	<br/>	
+	
+	<h3><u>Sentence Breaking</u></h3>
+	<p> Sentence breaking involves seperatig sentences from paragraph of text. In Hindi we denote the end of a sentence by what is called a 'purna viraam' which is denoted by '।'. Hence, sentences sepearated based on the punctuation mark '|'</p>
+        <p>For Tokenizing, we have separated the text on the basis of space so that dates, designations, abbreviations retain their original form.</p>
+        <br/>
+        
+	<h3><u>StopWord Detection</u></h3>
+	<p> Stop Words are the most frequent occurring words in the corpus.</p>
+        <p> Our approach for identifying stop words is first finding the unigrams and maintain their counts. Unigrams has been sorted based on  their counts and the top 50 unigrams are declared as stop words.</p>
+        <p><Strong> Stopword Examples : </Strong></p>
+        <p><code>{अपना, अपनी, अपने, अभी, अंदर, आदि, आप ,इत्यादि}</code></p>
+	<br/>	
+	
+	<h3><u>Stemming</u></h3>
+	<p>Stemming is the term used in linguistic morphology and information retrieval to describe the process for reducing inflected (or sometimes derived) words to their word stem, base or root. </p>
+        <p> Our approach for converting a word to its stem is rule-based. This rules check whether a word ends with particular suffix from the list or not. If yes, then it removes suffix and generates stem/root of word</p>
+        <p><Strong> Word-Stem Example: </Strong></p>
+        <p><code>{किरणें -> किरण, बेरोजगारी -> बेरोजगार}</code></p>
+	<br/>	
+
+	<h3><u>POS Tagging</u></h3>
+	<p>POS(Part-Of-Speech) Tagging is process of assigning each word of sentence a tag from predefined set of POS tags. </p>
+        <p>For POS Tagging, two probabilistic models are used : Hidden Markov Model(HMM) and Conditional Random Fields(CRF).</p>
+        <p><Strong> POS Tagging Example: </Strong></p>
+        <p><code>{सूरज -> NN,की -> PSP ,किरणें -> NN,अब -> PRP,पहाड़ों -> NN ,पर  -> PSP,खाली -> JJ,हाथ -> NN,नहीं -> NEG,आएगी -> V}</code></p>
+	<br/>	
+	
+	<h3><u>Named Entity Recognition</u></h3>
+	<p>Named Entity Recognition is process of identifying named entities from given paragraph (group of sentences). </p>
+        <p>For NER, probabilistic model Conditional Random Fields(CRF) is implemented.</p>
+        <p><Strong> NER Example: </Strong></p>
+        <p><code>{सूरज -> ENAMEX_LOCATION_B, हाथ -> ENAMEX_LIVTHINGS_B}</code></p>
+	<br/>	
+
+	<h3><u>Categorizaion</u></h3>
+	<p>Dataset used for testing are collection of News article.It belongs to different categories like politics, entertainment, sports etc. 	<p>For identifying article's category, a model based on KNN (K nearest neighbour) as well as Naive Bayes(NB) </p>
+	<br/>        
+	
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Slate theme maintained by <a href="https://github.com/jasoncostello">Jason Costello</a></p>
+        <p> Developed by <a href="http://github.com/ChokshiUtsav"> Utsav Chokshi</a></p>
+      </footer>
+    </div>
+
+  </body>
+</html>
