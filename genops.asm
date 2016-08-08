@@ -2,14 +2,18 @@
 ;;;;;;;;;; Description ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;This file contains method which perform general operations
+;This file contains methods which perform general operations
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;; Procedure Area ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Converts string of digits to number
+;Input   : pointer to number
+;outcome : Stores number to location pointed by EDI
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Prints a number at location pointed by EDI
 proc torrent._.print_num _num
         push    ebx
 
@@ -39,8 +43,13 @@ proc torrent._.print_num _num
         ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Time-out based implementation of non-blocking receive
+;Input   : Socket number, time for timeout, pointer to buffer, length of buffer
+;outcome : eax = number of bytes recieved (incase , we recieve data)
+           eax = -1 -> recv fails
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Time-out based implementation of non-blocking receive
 proc torrent._.nonblocking_recv _socknum, _seconds, _buffer, _bufferlen
 
             locals
@@ -82,6 +91,11 @@ proc torrent._.nonblocking_recv _socknum, _seconds, _buffer, _bufferlen
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Desc  : Prints torrent details
+; Input : Pointer to torrent data structure
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;Printing torrent details
 proc torrent._.print_torrent _torrent
         push    ebx esi edi
@@ -110,13 +124,6 @@ proc torrent._.print_torrent _torrent
   .next_peer:
         jecxz   .peers_done
         stdcall torrent._.print_peer, edx
-
-        stdcall      peer._.handshake, [_torrent], edx
-        ;cmp         eax,-1
-        ;je          @f 
-        ;stdcall     peer._.communicate, [_torrent], edx, eax
-        jmp         .peers_done
-
     @@: add     edx, sizeof.peer
         dec     ecx
         jmp     .next_peer
@@ -139,8 +146,11 @@ proc torrent._.print_torrent _torrent
         ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Desc  : Prints peer details
+; Input : Pointer to peer data structure
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Printing peer details
 proc torrent._.print_peer _peer
         push    ebx esi edi
         DEBUGF 2,'  print peer at %x\n',[_peer]
