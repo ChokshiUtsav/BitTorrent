@@ -1,7 +1,18 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; Description ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;This file contains methods for percent encoding
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;Procedure Area;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Converts data to percent encoded data
+;Input     : pointer to dat, length of data
+;Outcome   : stores encoded data at location pointed by edi
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc torrent._.percent_encode _data, _len
             push    ebx esi
