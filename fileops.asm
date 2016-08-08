@@ -3,15 +3,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;This file contains methods related to files to be downloaded
-;Methods of this file mainly invoves file creation operation.
+;Methods of this file mainly involves file creation operation.
 ;These methods are useful as part of pre-processing.
-;More information can be found at "Notes/FileSpaceAllocationOutline.txt"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;; Procedure Area ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Creating file space along with directory structure
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Creating file space along with directory structure
+;Input     : pointer to torrent data structure, download location string
+;Outcome   : array of pieces filled with details
+;ErrorCode : eax = 0  -> success (File space successfully created)
+             eax = -1 -> error (Fail to create file space) 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.allocate_file_space _torrent, _downloadlocation
         
             push    ebx esi edi
@@ -136,8 +142,12 @@ proc torrent._.allocate_file_space _torrent, _downloadlocation
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc   : Concatenates absolute directrory path and file-name
+;Input  : absolute path of directory, filename and pointer to location for storing complete path 
+;Outcome   : stores complete path at _path
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Concatenates absolute directrory path and file-name.
 proc fileops._.prepare_abs_path _dirname, _filename, _path
         
             push       esi edi
@@ -171,7 +181,14 @@ proc fileops._.prepare_abs_path _dirname, _filename, _path
             ret
 endp
 
-;creates an empty file of given size
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Creates an empty file of given size
+;Input     : absolute path of file, file size
+;Outcome   : Empty file of given size is created at given path 
+;ErrorCode : eax = 0  -> success (file is created)
+             eax = -1 -> error   (file is not created)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc fileops._.create_file _name, _size
 
             DEBUGF 2, "INFO: In fileops._.create_file\n"
@@ -208,7 +225,14 @@ proc fileops._.create_file _name, _size
             ret 
 endp
 
-;creates an empty folder of given size
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Creates an empty folder
+;Input     : absolute path of folder
+;Outcome   : Folder of is created at given path 
+;ErrorCode : eax = 0  -> success (folder is created)
+             eax = -1 -> error (folder is not created)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc fileops._.create_folder _name
 
             DEBUGF 2, "INFO: In fileops._.create_folder\n"
@@ -236,7 +260,13 @@ proc fileops._.create_folder _name
             ret 
 endp
 
-;writes to a file
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Writes data to file
+;Input     : absolute path to file, size of data to be written, pointer to data
+;ErrorCode : eax = 0  -> success (data is written to file)
+             eax = -1 -> error (data is not written to file)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc fileops._.write_to_file _name, _size, _data
             
             DEBUGF 2, "INFO: In fileops._.write_to_file\n"
