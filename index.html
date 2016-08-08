@@ -64,10 +64,14 @@ which is involved in downloading/uploading files among peers.
 		</p>
 		<p> Bencoding is the official way to represent any BitTorrent Specific data. Complete .torrent file is written in bencoded format.</p>
 		<p> Bencode.asm decodes bencoded data. Bencode.asm is helpful in decoding .torrent file and tracker response. </p>
-		<li><strong><a href ="https://github.com/ChokshiUtsav/BitTorrent/blob/master/percent.asm"></a></strong></li>
+		<li><strong><a href ="https://github.com/ChokshiUtsav/BitTorrent/blob/master/percent.asm"> percent.asm </a></strong></li>
 		<p> Percent-encoding, also known as URL encoding, is a mechanism for encoding information in a Uniform Resource Identifier (URI)</p>
 		<p> In bittorrent communication, while connecting with tracker server, URL must be encoded using percent-encoding.</p>
 		<p> Percent.asm helps to perform percent encoding.</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/piece.asm"> piece.asm </a></strong></li>
+		<p> A piece is chunk of data that can be verified against hash provided in torrent file.</p>
+		<p> Size of piece range from 256kB to 4096kB , depending on the total torrent size.</p>
+		<p> Piece.asm involves methods that helps in filling the piece structure (mentioned in torrent.inc), getter and setter methods for member variables of piece structure and writing/reading piece to/from file. </p>
 	</ul>
       </section>
     </div>
