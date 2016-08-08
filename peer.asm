@@ -1,4 +1,4 @@
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -8,7 +8,12 @@
 ;;;; Procedure Area ;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Finds all active peers and sets socket numbers for them
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Finds all active peers and sets socket numbers for them
+;Input   : pointer to torrent data structure 
+;Outcome : eax = number of active peers 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.prep_active_peers _torrent
             
             locals
@@ -39,7 +44,12 @@ proc torrent._.prep_active_peers _torrent
             ret
 endp
 
-;Communicates with all active peers for torrent downloading
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Communicates with all active peers for torrent downloading
+;Input   : pointer to torrent data structure 
+;Note    : active peers are the ones not having -1 as sock_num 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.communicate_active_peers _torrent
             
             DEBUGF 2, "INFO : In torrent._.communicate_active_peers\n"
@@ -62,6 +72,14 @@ proc torrent._.communicate_active_peers _torrent
      .quit: pop         edi esi edx ecx ebx
             ret
 endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc       : Performs handshake and intial message passing(i.e. sending interested msg)
+;Input      : pointer to torrent data structure and peer data structure
+;Outcome    : Sets details for peer data-structure like sock_num, last_seen 
+;ErrorCodes : eax = 0  -> success
+              eax = -1 -> error
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;performs handshake and initial message passsing
 proc peer._.handshake _torrent, _peer
@@ -174,6 +192,14 @@ proc peer._.handshake _torrent, _peer
             pop        edi esi ecx edx ebx
             ret
 endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc       : Performs message passing
+;Input      : pointer to torrent data structure and peer data structure
+;Outcome    : Sets details for peer data-structure like sock_num, last_seen, is_choking 
+;ErrorCodes : eax = 0  -> success
+              eax = -1 -> error
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Performs message passsing
 proc peer._.communicate _torrent, _peer
@@ -317,97 +343,6 @@ proc peer._.communicate _torrent, _peer
             pop     edi esi edx ecx ebx
             ret
 endp
-
-;Finds first available piece
-;Availbale piece satisfies following three conditions :
-;1) Peer has the piece available (Check using peer.bitfield)
-;2) Client does not have the piece (Check using torrent.bitfield)
-;3) Piece is not being downloaded by other peer (Check using piece.download_status)
-
-proc peer._.find_first_avl_piece _torrent, _peer
-            
-            locals
-                    size            dd ?
-                    index           dd ?
-            endl
-
-            DEBUGF 2, "INFO : In find_first_avl_piece\n"
-            push    ebx ecx edx esi edi
-
-            mov     eax, [_peer]
-            lea     edi, [eax + peer.bitfield]
-            mov     ebx, [_torrent]
-            lea     esi, [ebx + torrent.bitfield]
-
-            mov     eax, [ebx + torrent.pieces_cnt]
-            shr     eax, 3
-            mov     [size], eax
-            mov     edx, [ebx + torrent.pieces_cnt]
-            and     dx, 7
-
-            mov     ecx, 0
-    .loop:  cmp     ecx, [size]
-            je      .check_lastbyte
-            mov     eax, 0
-            mov     ebx, 0
-            mov     al, byte [esi]
-            mov     bl, byte [edi]
-            not     ax
-            and     bx, ax
-
-    @@:     bsf     ax, bx
-            jz      @f
-
-            mov      [index], ecx
-            shl      [index], 3
-            add      [index], eax
-            stdcall  piece._.get_status, [_torrent], [index]
-            cmp      eax, BT_PIECE_DOWNLOAD_NOT_STARTED
-            je       .quit
-            bsf      ax, bx
-            btr      bx, ax
-            jmp      @b
-
-     @@:    inc     ecx
-            add     esi, 1
-            add     edi, 1
-            jmp     .loop
-
-    .check_lastbyte:
-            cmp      edx, 0
-            je       .error
-            mov      eax, 0
-            mov      ebx, 0
-            mov      al, byte [esi]
-            mov      bl, byte [edi]
-            not      ax
-            and      bx, ax
-    @@:     bsf      ax, bx
-            jz       .error
-            cmp      bx, dx
-            jg       .error
-            imul     ecx, 8
-            mov      [index], ecx
-            add      [index], eax
-            stdcall  piece._.get_status, [_torrent], [index]
-            cmp      eax, BT_PIECE_DOWNLOAD_NOT_STARTED
-            je       .quit
-            bsf      ax, bx
-            btr      bx, ax
-            jmp      @b
-
-    .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
-            mov     eax, -1
-            pop     edi esi edx ecx ebx
-            ret 
-
-    .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
-            mov     eax, [index]
-            pop     edi esi edx ecx ebx
-            ret 
-endp
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;; Data Area ;;;;;;;;;;;;;;;;
