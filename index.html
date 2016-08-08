@@ -83,7 +83,7 @@ which is involved in downloading/uploading files among peers.
 		<p> Peer.asm contains methods to communicate with peers.</p>
 		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/message.asm"> message.asm </a></strong></li>
 		<p> In bittorrent protocol, commincation between clients happen using 11 different kind of messages. Read more about it <a href="https://wiki.theory.org/BitTorrentSpecification#Messages"></a>here.</p>
-		<p> All of the remaining messages in the protocol take the form of <length prefix><message ID><payload>. The length prefix is a four byte big-endian value. The message ID is a single decimal byte. The payload is message dependent.</p>
+		<p> All of the remaining messages in the protocol take the form of &lt;length prefix&gt;&lt;message ID&gt;&lt;payload&gt;. The length prefix is a four byte big-endian value. The message ID is a single decimal byte. The payload is message dependent.</p>
 		<p> Message.asm prepares and verifies these messages.</p>
 		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/hash.asm"> hash.asm </a></strong></li>
 		<p> SHA1 hash in bittorrent protocol provides protection against malicious data transfer.</p>
