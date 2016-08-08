@@ -85,7 +85,17 @@ which is involved in downloading/uploading files among peers.
 		<p> Torrent file contains SHA1 hash of each piece [under 'pieces' field of info dictionary]</p>
 		<p> Also, Bittorrent protocol requires to compute SHA1 hash of bencoded info dictionary while connecting with tracker.</p>
 		<p> Hash.asm contains methods for generating and verifying SHA1 hash of data.</p>
-		
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bitfield.asm"> bitfield.asm </a></strong></li>
+		<p> Bitfields, in bittorrent protocol, is compact way of specifying available pieces using 0s and 1s.</p>
+		<p> Bitfields requires x number of bytes. x = number of pieces/8. As each bit of byte represents one piece.</p>
+		<p> Bitfields are maintained for each peer as well as bittorent client.</p>
+		<p> Bitfield.asm involves finding available piece, setting and getting bit (i.e. availibility status of piece) in bitfields.</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/memops.asm"> memops.asm </a></strong></li>
+		<p> Memops.asm is helper file which helps managing pieces which are kept in memory</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/fileops.asm"> fileops.asm </a></strong></li>
+		<p> Fileops.asm is helper file which helps creating directory structure and empty files for torrent downloading.</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/genops.asm"> genops.asm </a></strong></li>
+		<p> Genops.asm is helper file which contains general methods which is helpful in overall torrent process.</p>
 	</ul>
       </section>
     </div>
