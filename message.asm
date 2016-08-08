@@ -3,12 +3,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;This file contains methods for creating and verifying messages of bittorrent protocol.
+;In bittorrent protocol, communication between clients happen using 11 different kind of messages.
+;All of the remaining messages in the protocol take the form of <length prefix><message ID><payload>. The length prefix is a four byte big-endian value. The message ID is a single decimal byte. The payload is message dependent.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Procedure Area ;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Prepares handshake message
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares handshake message
+;Input     : pointer to torrent data structure, peer data structure and pointer to location to store handshake message
+;Outcome   : Prepares handshake message and stores at _msg
+;Note      : Handshake msg (68Bytes): 19BitTorrent protocol00000000<20byte-info-hash><peerid>
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.prep_handshake_msg _torrent, _peer, _msg
         
                 DEBUGF 2, "INFO : In message._.prepare_handshake\n"
@@ -38,13 +46,20 @@ proc message._.prep_handshake_msg _torrent, _peer, _msg
                 mov     ecx, 20
                 rep     movsb
         
-        .error:
         .quit : DEBUGF 2, "INFO : Procedure ended successfully.\n"
                 pop     edi esi ecx edx ebx
                 ret
 endp
 
-;Verifies handshake message
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Verifies handshake message
+;Input     : pointer to torrent data structure, peer data structure and handshake message
+;Outcome   : Verifies handshake message and stores peer.peer_id
+;ErrorCode : eax = 0  -> success (verfied)
+             eax = -1 -> error   (verification failed)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.ver_handshake_msg _torrent, _peer, _msg
 
                 DEBUGF 2, "INFO : In message._.verify_handshake\n"
@@ -101,7 +116,12 @@ proc message._.ver_handshake_msg _torrent, _peer, _msg
                 ret
 endp
 
-;prepares message without payload (i.e. interested, non-interested, choke, unchoke)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares message without payload (i.e. interested, non-interested, choke, unchoke)
+;Input     : pointer to location where message to be stored , message type
+;Outcome   : 5 byte message stored at _msg
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.prep_nopayload_msg _msg, _type
                 
                 push   edi
@@ -116,7 +136,12 @@ proc message._.prep_nopayload_msg _msg, _type
                 ret
 endp
 
-;processes and verifies bitfield message 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Processes and verifies bitfield message 
+;Input     : pointer to torrent structure, peer structure, message, length
+;Outcome   : Verifies length of bitfield message and stores it at peer.bitfield 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.process_bitfield_msg _torrent, _peer, _msg, _len
                 
                 locals
@@ -156,7 +181,12 @@ proc message._.process_bitfield_msg _torrent, _peer, _msg, _len
                 ret
 endp
 
-;processes have message : sets corresponding bit in peer's bit-field. 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Processes have message 
+;Input     : pointer to peer structure, piece-index
+;Outcome   : Sets corresponding bit in peer's bit-field. 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.process_have_msg _peer, _index
                 
                 DEBUGF 2, "INFO : In message._.process_have_msg\n"
@@ -171,7 +201,14 @@ proc message._.process_have_msg _peer, _index
                 ret
 endp
 
-;verifies and processes piece message 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Verifies and processes piece message 
+;Input     : pointer to torrent structure, peer structure, message, current length of data recieved, total length of data expected to arrive, pointer to buffer
+;Outcome   : Verfies _len against block length
+             Receives complete block and performs cleaning task if downloaded block is the last one.
+;Note      : Usually data packet size is limited to 1500 bytes and block length is 16384 bytes , so piece message is divided into multiple data packets.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
 
              locals
@@ -309,7 +346,15 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
              ret            
 endp
 
-;prepares request message
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares request message
+;Input     : pointer to torrent structure, peer structure, message
+;Outcome   : Finds available piece and memory location for the same.
+             Stores prepared message at _msg.
+;ErrorCode : eax = 0  -> success (prepared)
+             eax = -1 -> error   (failed to prepare)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc message._.prep_request_msg _torrent, _peer, _msg
 
             DEBUGF 2, "INFO : In message._.prep_request_msg\n"
@@ -319,7 +364,7 @@ proc message._.prep_request_msg _torrent, _peer, _msg
             mov      ebx, [_peer]
             cmp      [ebx + peer.cur_piece], -1
             jne     .prepare_msg
-            stdcall  peer._.find_first_avl_piece, [_torrent], [_peer]
+            stdcall  bitfield._.find_first_avl_piece, [_torrent], [_peer]
             cmp      eax, -1
             jne      @f
             DEBUGF 3, "ERROR : No piece available\n"
