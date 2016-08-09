@@ -1,3 +1,15 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; Description ;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;This file involves method which are helpful in decoding bencoded data.
+;.torrent file and tracker response are the examples of bencoded data.
+;Bencoding only supports four data types : byte strings, integers, lists, and dictionaries.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;; Procedure Area;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.bdecode_dict _torrent, _dataend, _keytable
         DEBUGF 2, "INFO : In torrent._.bdecode_dict\n"
   .next_key:
