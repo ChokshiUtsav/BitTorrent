@@ -1,6 +1,18 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; Description ;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;This file contains method that prepares get request for tracker and helps to decode response from tracker.
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; Procedure Area;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares get request for Tracker server with different tracker.protocols
+;Input     : pointer to torrent data structure, tracker 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 proc torrent._.tracker_get _torrent, _tracker
         
@@ -33,6 +45,11 @@ proc torrent._.tracker_get _torrent, _tracker
             ret  
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares get request for Tracker server with tracker.protocol = TCP
+;Input     : pointer to torrent data structure, tracker 
+;Outcome   : Prepares HTTP get request and processes HTTP response
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc tracker._.get_tcp _torrent, _tracker
         
@@ -45,9 +62,6 @@ proc tracker._.get_tcp _torrent, _tracker
 
             mov     ebx, [_tracker]
             stdcall torrent._.tracker_fill_params, [_torrent], [_tracker]
-
-            ;lea     edi, [ebx + tracker.params]
-            ;DEBUGF 2,'INFO : Params: %s\n',edi
 
             mov     edi, [_tracker]
             add     edi, [edi + tracker.announce_len]
@@ -90,13 +104,23 @@ proc tracker._.get_tcp _torrent, _tracker
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares get request for Tracker server with tracker.protocol = UDP
+;Input     : pointer to torrent data structure, tracker 
+;Note      : It is remaining to implement
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc tracker._.get_udp _torrent, _tracker
         mov     eax, BT_TRACKER_ERROR_NOT_SUPPORTED
         ret
 endp
 
-;Prepares HTTP get request for tracker server
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Prepares announce URL for connecting with HTTP Tracker server
+;Input     : pointer to torrent data structure, tracker 
+;Outcome   : Fills tracker.announce parameter
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent._.tracker_fill_params _torrent, _tracker
             push    ebx esi edi
 
@@ -186,7 +210,6 @@ proc torrent._.tracker_fill_params _torrent, _tracker
             xor     eax, eax
             stosb
 
-    .error:
     .quit:  DEBUGF 2, "INFO : Procedure ended successfully.\n"
             pop     edi esi ebx
             ret
