@@ -33,8 +33,16 @@ This feature allows tracking of peers downloading without the use of standard tr
 Why? Implementation of this feature requires heavy changes in over-all design. 
 
 ### (6) Tracker scrape convention
-Tracker scrape URL is another fancy way of getting details from tracker. 
+Tracker scrape URL is way of getting statistics about torrent and more details about tracker. It helps in deciding whether or not to send announce requesting more peers.
 
-[Read more about it here](https://wiki.theory.org/BitTorrentSpecification#Tracker_.27scrape.27_Convention)
+[Read more about it here](https://en.wikipedia.org/wiki/Tracker_scrape)
 
-Why ? Every tracker server that has scrape URL, also has, announce URL. So this is an add-on and not neccessary feature.  
+Why ? Every tracker server that has scrape URL, also has, announce URL. So this is an add-on that helps reducing number of requests to tracker. Not neccessary feature.  
+
+
+### (7) Contacting multiple trackers
+.torrent file contains list of trackers that hosts the torrent under announce-list.
+
+[Read more about it here](http://bittorrent.org/beps/bep_0012.html)
+
+Why? announce-list is an optional parameter. It is part of extension of Bittorrent Protocol (BEP12).
