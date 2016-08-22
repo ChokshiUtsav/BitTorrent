@@ -150,7 +150,7 @@ proc  copy_strs _src, _dest
 endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Desc     : Connects with backend, takes request from send_buffer and stores at recv_buffer
+;Desc     : Connects with backend, takes request from send_buffer and stores response at recv_buffer
 ;Outcome  : if success -> eax = 0   (connected to server)
 ;           if error   -> eax = -1  (not able to connect to server)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
