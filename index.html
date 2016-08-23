@@ -34,18 +34,18 @@
 	
         <h1>Introduction to Bittorrent Client</h1>
         <p>
-        Bittorrent client is an application that helps to perform peer to peer file sharing using <a href = "https://en.wikipedia.org/wiki/BitTorrent"> Bittorrent Protocol </a> Bittorrent client runs on every machine
-which is involved in downloading/uploading files among peers.	
+        Bittorrent client is an application that helps to perform peer to peer file sharing using <a href = "https://en.wikipedia.org/wiki/BitTorrent"> Bittorrent Protocol </a><br/>
+        Bittorrent client runs on every machine which is involved in downloading/uploading files among peers.	
         </p>
-        <p> For developement purpose, look at unoffical specification of Bittorrent Protocol <a href = "https://wiki.theory.org/BitTorrentSpecification"> here </a></p>	
-	<p> For understanding overall developement process, visit Kristen Widman's <a href="http://www.kristenwidman.com/blog/33/how-to-write-a-bittorrent-client-part-1/"> awesome blog. </a></p>
-	<p> For more information and queries, visit <a href="http://board.kolibrios.org/viewtopic.php?f=40&t=3289"> KolibriOS's forum </a> </p>
-	
-	<h1> Motivation </h1>
+        <h1> Motivation </h1>
 	<p>
 	Bittorrent Client project has been carried out as part of Google Summer of Code 2016 program under KolibriOS organization. Click <a href="https://summerofcode.withgoogle.com/projects/#4978095203287040"> here</a> for more details.	
 	</p>
-	
+        <h1> Important Resources </h1>
+        <p> For developement purpose, look at unoffical specification of Bittorrent Protocol <a href = "https://wiki.theory.org/BitTorrentSpecification"> here </a></p>	
+	<p> For understanding overall developement process, visit Kristen Widman's <a href="http://www.kristenwidman.com/blog/33/how-to-write-a-bittorrent-client-part-1/"> awesome blog. </a></p>
+	<p> For more information and queries, visit <a href="http://board.kolibrios.org/viewtopic.php?f=40&t=3289"> KolibriOS's forum </a> </p>
+	<p> You can find my GSoC Proposal <a href="https://storage.googleapis.com/summerofcode-prod.appspot.com/gsoc/core_project/doc/1458819174_Utsav_Chokshi_GSoCProjectProposal_Final.pdf?Expires=1472035132&GoogleAccessId=summerofcode-prod%40appspot.gserviceaccount.com&Signature=LdkXz82WDpAy%2FlX4x%2F%2B5D6sJJTAKQ70osneC6WUM5mgJQQEAgnqinjSPWMEDWwfqWT7%2B9iC59PBoMtu6hq0vNz4PX5p8UpVF3rsJp983YjOxfNu1HFw2ZD9qbaBJEE8LV5%2FvfNeDxlTnoL4f6smvOFqivF2Qc2WCUrxyaR5TxUtj2TOPP3sNn4f8NZhggJPWhAQOdVNx7VhhNjUCEF%2Bo%2Fnhnl6tC3G%2BgUJ0U4hGZELlS2iVXXbzxwCEdwGX%2FYj%2Fn8TroxwNAOdOUDJc3zmWky%2BjVLQvGuvnuag1WNPlURYek0K2UVPKwurN0gsEKmzj6doJF3fYICZTTEBC3D%2BhtcA%3D%3D"> Here </a></p>
 	<h1> List of commits </h1>
 	<p>
 	This project is carried out under category 'New Feature'. So it has its independent repository.	
@@ -58,7 +58,7 @@ which is involved in downloading/uploading files among peers.
 	<p> All the code files have been kept directly under the main repository</p>
 	<ul>
 		<li><Strong><a href= "https://github.com/ChokshiUtsav/BitTorrent/tree/master/notes"> Notes </a></strong></li>
-		<p> It Contains outlines of codes and important points for developement in simple english </p>
+		<p> It Contains important notes for developement in simple english </p>
 		<li><Strong><a href= "https://github.com/ChokshiUtsav/BitTorrent/tree/master/includes"> Includes </a></Strong></li>
 		<p> It contains all files which needs to be included to run complete code. These files are developed by KolibriOS community.</p>
 		<li><Strong><a href= "https://github.com/ChokshiUtsav/BitTorrent/tree/master/torrents"> Torrents </a></Strong></li>
@@ -70,12 +70,25 @@ which is involved in downloading/uploading files among peers.
 	<h1> Torrent Code Files and their significance </h1>
 	<p> These files are heart of bit-torrent project.</p>
 	<ul>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bittorrent_frontend_new.asm"> bittorrent_frontend_new.asm</a></strong></li>
+		<p> This file contains methods for generating front-end part of bit-torrent client.</p>
+		<p> Front-end of bittorrent client is command line interface through which user can handle all torrents.</p>
+		<p> This file is still in developement phase.</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bittorrent_backend.asm"> bittorrent_backend.asm</a></strong></li>
+		<p> This file keeps running in background and keeps updating torrent data structure.</p>
+		<p> This file is still in developement phase.</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bittorrent_backend_actions.asm"> bittorrent_backend_actions.asm</a></strong></li>
+		<p> This is helper file to bittorrent_backend.asm. This file contains mainly methods for handling different torrent actions invoked by front-end</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/torrent.inc"> torrent.inc </a></strong></li>
+		<p> This file contains all structures and constants.</p>
+		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/torrent.asm"> torrent.asm </a></strong></li>
+		<p> This is primary file for torrent operations. It handles over-all flow of torrent. It involves methods for adding new torrent, starting and resuming existing torrents.</p>
+		<p> This file is written as library and includes all files , followed in this list. It creates torrent.obj file , once it is compiled.</p>
 		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/tracker.asm"> tracker.asm </a></strong></li>
 		<p> The tracker is an HTTP(S) service that holds information about the torrent and peers. The tracker itself does not have the file you want to download, but it does have a list of all peers that are connected for this torrent who have the file or are downloading the file.</p>
 		<p> Tracker.asm contains method that prepares get request for tracker and helps to decode response from tracker.</p>
 		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bencode.asm"> bencode.asm </a></strong></li>
-		<p> Bencoding is a way to specify and organize data in a terse format. It supports only four types: byte strings, integers, lists, and dictionaries.
-		</p>
+		<p> Bencoding is a way to specify and organize data in a terse format. It supports only four types: byte strings, integers, lists, and dictionaries.</p>
 		<p> Bencoding is the official way to represent any BitTorrent Specific data. Complete .torrent file is written in bencoded format.</p>
 		<p> Bencode.asm decodes bencoded data. Bencode.asm is helpful in decoding .torrent file and tracker response. </p>
 		<li><strong><a href ="https://github.com/ChokshiUtsav/BitTorrent/blob/master/percent.asm"> percent.asm </a></strong></li>
@@ -111,15 +124,6 @@ which is involved in downloading/uploading files among peers.
 		<p> Fileops.asm is helper file which helps creating directory structure and empty files for torrent downloading.</p>
 		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/genops.asm"> genops.asm </a></strong></li>
 		<p> Genops.asm is helper file which contains general methods which is helpful in overall torrent process.</p>
-		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/torrent.asm"> torrent.asm </a></strong></li>
-		<p> This is primary file for torrent operations. It handles over-all flow of torrent. It involves methods for adding new torrent, starting and resuming existing torrents.</p>
-		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/torrent.inc"> torrent.inc </a></strong></li>
-		<p> This file contains all structures and constants.</p>
-		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bittorrent_backend.asm"> bittorrent_backend.asm</a></strong></li>
-		<p> This file keeps running in background and keeps updating torrent data structure.</p>
-		<li><strong><a href="https://github.com/ChokshiUtsav/BitTorrent/blob/master/bittorrent_frontend_new.asm"> bittorrent_frontend_new.asm</a></strong></li>
-		<p> This file contains methods for generating front-end part of bit-torrent client.</p>
-		<p> Front-end of bittorrent client is command line interface through which user can handle all torrents.</p>
       </section>
     </div>
 
