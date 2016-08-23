@@ -1,3 +1,21 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2016 Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,7 +75,7 @@ endp
 ;Input     : pointer to torrent data structure, peer data structure and handshake message
 ;Outcome   : Verifies handshake message and stores peer.peer_id
 ;ErrorCode : eax = 0  -> success (verfied)
-             eax = -1 -> error   (verification failed)
+;            eax = -1 -> error   (verification failed)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc message._.ver_handshake_msg _torrent, _peer, _msg
@@ -205,8 +223,8 @@ endp
 ;Desc      : Verifies and processes piece message 
 ;Input     : pointer to torrent structure, peer structure, message, current length of data recieved, total length of data expected to arrive, pointer to buffer
 ;Outcome   : Verfies _len against block length
-             Receives complete block and performs cleaning task if downloaded block is the last one.
-;Note      : Usually data packet size is limited to 1500 bytes and block length is 16384 bytes , so piece message is divided into multiple data packets.
+;         Receives complete block and performs cleaning task if downloaded block is the last one.
+;Note      : Usually data packet size is limited to 1500 bytes and block length is usually larger than 1500 bytes , so piece message is transfered as stream of data packets.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
@@ -326,9 +344,9 @@ proc message._.process_piece_msg _torrent, _peer, _msg, _curlen, _len ,_buffer
 
              ;setting torrent downloaded and left
              mov     ebx, [_torrent]
-             inc     [ebx + torrent.downloaded]
-
-             DEBUGF 2, "INFO : torrent downloaded %d\n", [ebx + torrent.downloaded]  
+             mov     eax, [ebx + torrent.piece_length]
+             sub     [ebx + torrent.left], eax
+             add     [ebx + torrent.downloaded], eax
 
              ;preparing data for next piece
              mov      ebx, [_peer]
@@ -349,10 +367,10 @@ endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Desc      : Prepares request message
 ;Input     : pointer to torrent structure, peer structure, message
-;Outcome   : Finds available piece and memory location for the same.
-             Stores prepared message at _msg.
+;Outcome   : Finds index of available piece and memory location for the same.
+;            Stores prepared message at _msg.
 ;ErrorCode : eax = 0  -> success (prepared)
-             eax = -1 -> error   (failed to prepare)
+;            eax = -1 -> error   (failed to prepare)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc message._.prep_request_msg _torrent, _peer, _msg

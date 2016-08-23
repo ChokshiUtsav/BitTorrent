@@ -1,19 +1,42 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2015 Ivan Baravy (dunkaist)
+;    Modified by Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 TORRENT_STACK_SIZE = 0x1000
 
-MAX_PEERS_PER_TORRENT = 50
+MAX_PEERS_PER_TORRENT = 30
 MAX_PEERS_TOTAL       = 200
+
 NUM_PIECES_IN_MEM     = 10
 
 RECV_TIMEOUT       = 1          ;in seconds
-PEER_TIMEOUT       = 1800       ;in seconds
-KEEPALIVE_TIME     = 7200       ;in seconds = 2 mins
-TRACKER_TIMEOUT    = 1800       ;in seconds = 30 mins
+PEER_TIMEOUT       = 10         ;in seconds
+KEEPALIVE_TIME     = 120       ;in seconds (= 2 mins)
+TORRENT_TIMEOUT    = 3600       ;in seconds
 
 BT_TRACKER_PROTOCOL_TCP  = 0    ; bep_0003: The BitTorrent Protocol Specification
 BT_TRACKER_PROTOCOL_UDP  = 1    ; bep_0015: UDP Tracker Protocol for BitTorrent
 BT_TRACKER_PROTOCOL_LAST = 1
 
 BT_TRACKER_ERROR_NOT_SUPPORTED = 1
+
+BT_ERROR_CONNECTING_TRACKER = 1
+BT_ERROR_NO_ACTIVE_PEERS    = 2
 
 BT_PEER_PROTOCOL_TCP  = 0       ; bep_0003: The BitTorrent Protocol Specification
 BT_PEER_PROTOCOL_uTP  = 1       ; bep_0029: uTorrent transport protocol
@@ -78,6 +101,7 @@ struct tracker
         protocol        dd ?
         interval        dd ?
         min_interval    dd ?
+        last_seen       dd ?
 ends
 
 struct peer

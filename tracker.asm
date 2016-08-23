@@ -1,3 +1,22 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2015 Ivan Baravy (dunkaist)
+;    Modified by Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,7 +58,11 @@ proc torrent._.tracker_get _torrent, _tracker
             mov     eax, -1
             pop     ebx
             ret
-    .quit:  DEBUGF 2, "INFO : Procedure ended successfully.\n"
+    
+    .quit:  mcall   26, 9
+            mov     ebx, [_tracker]
+            mov     [ebx + tracker.last_seen], eax
+            DEBUGF 2, "INFO : Procedure ended successfully.\n"
             mov     eax, 0
             pop     ebx
             ret  
@@ -222,4 +245,3 @@ endp
 tracker_get_by_protocol dd tracker._.get_tcp
                         dd tracker._.get_udp
 SHA1_LEN                dd 20
-

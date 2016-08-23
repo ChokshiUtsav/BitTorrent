@@ -2,6 +2,7 @@
 ;    libbmfnt -- torrent library
 ;
 ;    Copyright (C) 2015 Ivan Baravy (dunkaist)
+;    Modified by Utsav Chokshi (Utsav_Chokshi)
 ;
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -86,6 +87,14 @@ proc lib_init
           xor eax,eax
           ret
 endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc      : Fills torrent structure for new torrent
+;Input     : torrent source type, torrent file location, download location
+;Outcome   : array of pieces filled with details
+;ErrorCode : if successs -> eax = pointer to torrent structure
+;            if error    -> eax = -1  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Adding new torrent
 proc torrent.new _bt_new_type, _src, _downloadlocation
@@ -341,8 +350,6 @@ import libcrash                 , \
     libcrash.init  , 'lib_init' , \
     crash.hash     , 'crash_hash'   , \
     crash.bin2hex  , 'crash_bin2hex'
-
-
 
 include_debug_strings
 

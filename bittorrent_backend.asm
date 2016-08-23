@@ -1,3 +1,22 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2016 Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;Header Area;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,6 +59,8 @@ include 'bittorrent_backend_actions.asm'
 ;;;;;;;;;;;Code Area;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;entry point of main thread
+
 START:
             ;init heap
             mcall   68, 11
@@ -67,7 +88,7 @@ START:
             mov      [num_torrents], 0
 
             ;current thread will handle the connection from front-end
-            ;create  thread to handle torrent downloading
+            ;new thread will handle torrent downloading
 
     @@:     mcall    51, 1, THREAD2_START, [thread_stack]
             cmp      eax, -1
@@ -75,7 +96,7 @@ START:
             DEBUGF 3, "ERROR : Not able to create thread\n"
             jmp      .error
 
-            ;Start listening on port 50000 for incoming requests from frontend
+            ;Start listening on port 50000 for incoming requests from front-end
     @@:     mcall   40, EVM_STACK
 
             mcall   socket, AF_INET4, SOCK_STREAM, 0
@@ -97,7 +118,6 @@ START:
             cmp     eax, -1
             je      .accept_err
             mov     [socketnum2], eax
-            DEBUGF 2, "INFO : Connection accepted\n"
 
     .loop:
             mcall   recv, [socketnum2], recv_buffer, recv_buffer.length, 0
@@ -111,10 +131,16 @@ START:
             lodsd
             mov     [length_of_msg], eax
             lodsb
-            mov     [type_of_msg], al   
+            mov     [type_of_msg], al
 
             cmp     al, TORRENT_ACTION_ADD
             je      .torrent_add
+
+            cmp     al, TORRENT_ACTION_SHOW
+            je      .torrent_show
+
+            cmp     al, TORRENT_ACTION_SHOW_ALL
+            je      .torrent_show_all
 
             cmp     al, TORRENT_ACTION_START
             je      .torrent_start
@@ -124,19 +150,29 @@ START:
 
             cmp     al, TORRENT_ACTION_REMOVE
             je      .torrent_remove
-            
-            cmp     al, TORRENT_ACTION_SHOW
-            je      .torrent_show
-
-            cmp     al, TORRENT_ACTION_SHOW_ALL
-            je      .torrent_show
-            
+                        
             cmp     al, TORRENT_ACTION_QUIT
             je      .torrent_quit
 
+            mcall   send, [socketnum2], Invalid_Cmd_Str
+            mcall   close, [socketnum2]
+            jmp     .accept_connection
+
     .torrent_add:
-            stdcall backend_actions.torrent_add, esi, send_buffer
+            stdcall backend_actions_add, esi, send_buffer
             mcall   send, [socketnum2], send_buffer, eax
+            mcall   close, [socketnum2]
+            jmp     .accept_connection
+
+    .torrent_show:
+            stdcall backend_actions_show, esi, send_buffer
+            mcall   send, [socketnum2], send_buffer, eax
+            mcall   close, [socketnum2]
+            jmp     .accept_connection
+
+    .torrent_show_all: 
+            stdcall backend_actions_show_all , send_buffer
+            mcall   send, [socketnum2], send_buffer, eax       
             mcall   close, [socketnum2]
             jmp     .accept_connection
 
@@ -149,10 +185,6 @@ START:
             jmp     .accept_connection
 
     .torrent_remove:
-            mcall   close, [socketnum2]
-            jmp     .accept_connection
-
-    .torrent_show:
             mcall   close, [socketnum2]
             jmp     .accept_connection
 

@@ -1,3 +1,21 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2016 Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;Header Area;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,7 +96,13 @@ START:
             je      @f
 
         @@: stdcall compare_strs, params, show_all_cmd_str
-            cmp     eax, -1     
+            cmp     eax, -1
+            je      @f
+            stdcall torrent_show_all
+            jmp     .input_loop
+
+        @@: invoke  con_write_asciiz, Invalid_Cmd_Str
+            jmp     .input_loop     
 
             ;close  console
             invoke  con_get_flags
@@ -153,7 +177,7 @@ endp
 ;Desc     : Connects with backend, takes request from send_buffer and stores response at recv_buffer
 ;Outcome  : if success -> eax = 0   (connected to server)
 ;           if error   -> eax = -1  (not able to connect to server)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc  connect_backend
 
@@ -261,6 +285,39 @@ proc torrent_add
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Handles torrent show all command
+;Outcome : It prints on the console all added torrents
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+proc torrent_show_all
+
+            push    ebx ecx edx esi edi
+
+            ;prepares message
+            mov     eax, 0
+            mov     ecx, 0
+            mov     edi, send_buffer
+            stosd
+            mov     eax, TORRENT_ACTION_SHOW_ALL
+            stosb
+
+            ;connecting to backend
+            invoke  con_write_asciiz, connect_backend_str
+            add     ecx, 5
+            mov     [send_msg_len], ecx
+            stdcall connect_backend
+            cmp     eax, -1
+            jne     @f
+            invoke  con_write_asciiz, problem_backend_str
+            jmp     .quit
+
+    @@:     invoke  con_write_asciiz, recv_buffer   
+
+    .quit:  pop     edi esi edx ecx ebx
+            ret
+endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;Import Area;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -300,6 +357,7 @@ download_loc_str    db      '>>>>Enter download location :', 10,0
 connect_backend_str db      '>>>>Connecting to backend...',10,0
 problem_backend_str db      '>>>>Problem connecting with backend...',10,0
 prompt_str          db       10,'>> ',0
+Invalid_Cmd_Str     db      'Torrent command not supported', 10, 0
 
 ;Data for connecting with backend
 sockaddr_server:  

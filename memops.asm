@@ -1,3 +1,21 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2016 Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -14,9 +32,9 @@
 ;Desc      : Allocating memory for keeping pieces in memory 
 ;Input     : pointer to torrent data structure
 ;Outcome   : Sets piece_mem = pointer to memory allocated for NUM_PIECES_IN_MEM 
-             Initializes piece_mem_status array with MEM_LOCATION_EMPTY
+;            Initializes piece_mem_status array with MEM_LOCATION_EMPTY
 ;ErrorCode : eax = 0  -> success
-             eax = -1 -> error  
+;            eax = -1 -> error  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc torrent._.allocate_mem_space _torrent
@@ -65,7 +83,7 @@ endp
 ;Input     : pointer to torrent data structure, piece-index and status
 ;Outcome   : If memory location is found,sets piece-index and status at corresponding   piece_mem_status 
 ;ErrorCode : eax = 0  -> success(Memory location with given status found)
-             eax = -1 -> error  (Memory location with given status not found)
+;            eax = -1 -> error  (Memory location with given status not found)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc torrent._.get_mem_loc _torrent, _index, _status
@@ -112,7 +130,7 @@ endp
 ;Input     : pointer to torrent data structure, piece-index and status
 ;Outcome   : Finds piece-index in piece_mem_status and sets status
 ;ErrorCode : eax = 0  -> success(Given index found in array)
-             eax = -1 -> error  (Given index not found in array)
+;            eax = -1 -> error  (Given index not found in array)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc torrent._.set_piece_mem_status _torrent, _index, _status

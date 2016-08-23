@@ -1,8 +1,27 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2016 Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;This file contains methods related to piece
+;This file contains methods related to piece.
 ;Methods of this file mainly involves IO and file related operation.
 ;These methods are useful as part of pre-processing and post-processing and do not confront any network related operations.
 
@@ -21,7 +40,7 @@
 ;Input     : pointer to torrent data structure and pointer to pieces
 ;Outcome   : array of pieces filled with details
 ;ErrorCode : eax = 0  -> success
-             eax = -1 -> error  
+;            eax = -1 -> error  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc piece._.fill_all_pieces _torrent, _pieces
@@ -66,7 +85,7 @@ endp
 ;Input     : pointer to torrent data structure and pointer to pieces
 ;Outcome   : a piece structure filled with details
 ;ErrorCode : eax = 0  -> success
-             eax = -1 -> error  
+;            eax = -1 -> error  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;             
 
 proc piece._.fill_piece _torrent, _pieces
@@ -205,7 +224,7 @@ endp
 ;Input     : pointer to torrent data structure and index of piece
 ;Outcome   : eax = download_status
 ;Note      : Download status can be one of this :
-             BT_PIECE_DOWNLOAD_NOT_STARTED/BT_PIECE_DOWNLOAD_IN_PROGRESS/ BT_PIECE_DOWNLOAD_COMPLETE
+;             BT_PIECE_DOWNLOAD_NOT_STARTED/BT_PIECE_DOWNLOAD_IN_PROGRESS/  BT_PIECE_DOWNLOAD_COMPLETE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc piece._.get_status _torrent, _index
@@ -270,13 +289,13 @@ proc piece._.set_num_blocks _torrent, _index, _numblocks
             ret
 endp
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Desc      : reads a single piece from file(s) to memory
 ;Input     : pointer to torrent data structure, index of piece,pointer to location that contains data
 ;Outcome   : memory location pointed by data is filled with piece data
 ;ErrorCode : eax = 0  -> success
-             eax = -1 -> error  
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc piece._.get_piece _torrent, _index, _data
 
@@ -365,13 +384,13 @@ proc piece._.get_piece _torrent, _index, _data
             ret
 endp
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Desc      : ;writes a single piece from memory to file(s)
 ;Input     : pointer to torrent data structure , index of piece, pointer to location where piece data needs to be written
 ;Outcome   : files, to which piece belongs, are written
 ;ErrorCode : eax = 0  -> success
-             eax = -1 -> error  
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;             eax = -1 -> error  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc piece._.set_piece  _torrent, _index, _data
             

@@ -1,3 +1,21 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;    Copyright (C) 2016 Utsav Chokshi (Utsav_Chokshi)
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Description ;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,7 +57,8 @@ proc torrent._.prep_active_peers _torrent
             dec         ecx
             jmp         .loop
 
-    .quit:  mov         eax, [num_active_peers]     
+    .quit:  DEBUGF 2,   "INFO : Procedure ended successfully\n"
+            mov         eax, [num_active_peers]     
             pop         edi edi edx ecx ebx
             ret
 endp
@@ -78,10 +97,9 @@ endp
 ;Input      : pointer to torrent data structure and peer data structure
 ;Outcome    : Sets details for peer data-structure like sock_num, last_seen 
 ;ErrorCodes : eax = 0  -> success
-              eax = -1 -> error
+;             eax = -1 -> error
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;performs handshake and initial message passsing
 proc peer._.handshake _torrent, _peer
 
             locals
@@ -198,7 +216,7 @@ endp
 ;Input      : pointer to torrent data structure and peer data structure
 ;Outcome    : Sets details for peer data-structure like sock_num, last_seen, is_choking 
 ;ErrorCodes : eax = 0  -> success
-              eax = -1 -> error
+;              eax = -1 -> error
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Performs message passsing

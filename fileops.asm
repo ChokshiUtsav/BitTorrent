@@ -15,7 +15,7 @@
 ;Input     : pointer to torrent data structure, download location string
 ;Outcome   : array of pieces filled with details
 ;ErrorCode : eax = 0  -> success (File space successfully created)
-             eax = -1 -> error (Fail to create file space) 
+;            eax = -1 -> error (Fail to create file space) 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc torrent._.allocate_file_space _torrent, _downloadlocation
@@ -186,7 +186,7 @@ endp
 ;Input     : absolute path of file, file size
 ;Outcome   : Empty file of given size is created at given path 
 ;ErrorCode : eax = 0  -> success (file is created)
-             eax = -1 -> error   (file is not created)
+;            eax = -1 -> error   (file is not created)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc fileops._.create_file _name, _size
@@ -230,7 +230,7 @@ endp
 ;Input     : absolute path of folder
 ;Outcome   : Folder of is created at given path 
 ;ErrorCode : eax = 0  -> success (folder is created)
-             eax = -1 -> error (folder is not created)
+;            eax = -1 -> error (folder is not created)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc fileops._.create_folder _name
@@ -264,7 +264,7 @@ endp
 ;Desc      : Writes data to file
 ;Input     : absolute path to file, size of data to be written, pointer to data
 ;ErrorCode : eax = 0  -> success (data is written to file)
-             eax = -1 -> error (data is not written to file)
+;            eax = -1 -> error (data is not written to file)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc fileops._.write_to_file _name, _size, _data
