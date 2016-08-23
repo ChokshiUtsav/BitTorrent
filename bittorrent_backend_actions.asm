@@ -53,6 +53,55 @@ proc  copy_strs _dest, _src
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Converts number to string
+;Input   : number, destination string pointer
+;Outcome : Non-Null terminated string representation of number
+;Output  : eax = length of string
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+proc  num_to_str _num, _dest
+            
+            push ebx ecx edx esi edi
+
+            locals
+                temp_str rb 8
+            endl
+
+            mov  ebx, 10
+            mov  ecx, 0
+            lea  edi, [temp_str]
+            mov  eax, [_num]
+
+    .loop1: mov  edx, 0
+            div  ebx
+            add  dl, 48
+            push eax
+            mov  eax, edx
+            stosb
+            pop  eax
+            inc  ecx
+            cmp  eax, 0
+            je   @f
+            jmp  .loop1
+
+    @@:     mov  ebx, ecx
+            dec  edi
+            mov  esi, [_dest]
+
+    .loop2: cmp  ecx, 0
+            je   .quit
+            mov  al, byte[edi]
+            mov  byte[esi], al
+            dec  ecx
+            dec  edi
+            inc  esi
+            jmp  .loop2 
+
+    .quit:  mov  eax, ebx
+            pop edi esi edx ecx ebx
+            ret
+endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Desc    : adds new torrent
@@ -175,14 +224,69 @@ proc backend_actions_show_all  _sendbuffer
             mov     esi, ecx
             imul    esi, sizeof.torrent_info
             add     esi, [torrent_arr]
-            DEBUGF 2, "INFO : id : %d\n",[esi + torrent_info.torrent_id]
+            
+            ;prepares message
+            
+            ;prints available torrent message
+            mov      edi, [_sendbuffer]
+            stdcall  copy_strs, edi, Avl_Torrents_Msg
+            add      edi, eax
+            mov      byte[edi], 0x0A
+            inc      edi
+
+            ;prints torrent-index message
+            stdcall  copy_strs, edi, Torrent_Index_Msg
+            add      edi, eax
+
+            ;prints torrent-index
+            stdcall  num_to_str, ecx, edi
+            add      edi, eax
+            mov      byte[edi], 0x0A
+            inc      edi
+
+            ;prints seperator
+            stdcall  copy_strs, edi, Seperator_Str
+            add      edi, eax
+            mov      byte[edi], 0x0A
+            inc      edi
+
+            ;prints torrent-id message
+            stdcall   copy_strs, edi, Torrent_ID_Msg
+            add       edi, eax
+            dec       edi
+
+            ;prints torrent-id
+            mov     eax, [esi + torrent_info.torrent_id]
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi         
+
+            ;prints name message
+            stdcall   copy_strs, edi, Torrent_Name_Msg
+            add       edi, eax
+            dec       edi
+
+            ;prints name
+            mov     eax, [esi + torrent_info.torrent_pointer]
+            lea     esi, [eax + torrent.name]
+            stdcall copy_strs, edi, esi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+            mov     byte[edi], 0x00
+
+            mov     edi, [_sendbuffer]
+            DEBUGF 2, "INFO : String %s\n", edi
+            jmp    .quit            
             inc     ecx
             jmp     .loop
 
     .no_torrent:
-    .quit:      stdcall  copy_strs, [_sendbuffer], No_Torrent_Added_Str
-                pop     edi esi edx ecx ebx
-                ret
+            stdcall  copy_strs, [_sendbuffer], No_Torrent_Added_Str
+    .quit:  
+            pop     edi esi edx ecx ebx
+            ret
 endp
 
 proc backend_actions_start
