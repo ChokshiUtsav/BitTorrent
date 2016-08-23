@@ -393,17 +393,22 @@ proc torrent._.bdecode_info_name _torrent, _arg
     @@:
         stdcall torrent._.bdecode_readnum
         DEBUGF 2,'%s\n',esi:eax
-        cmp     [ebx + torrent.files_cnt], 1
-        jnz     @f
-        mov     edi, [ebx + torrent.files]
-        add     edi, 4
-        jmp     .common
-    @@:
+
         lea     edi, [ebx + torrent.name]
-  .common:
         mov     ecx, eax
         rep     movsb
         mov     byte[edi], 0
+
+        cmp     [ebx + torrent.files_cnt], 1
+        jne     .quit
+        push    esi
+        lea     esi, [ebx + torrent.name]
+        mov     edi, [ebx + torrent.files]
+        add     edi, 4
+        mov     ecx, eax
+        rep     movsb
+        mov     byte[edi], 0
+        pop     esi
         jmp     .quit
         
   .error:
