@@ -9,4 +9,4 @@ Use following command :
 > make run
 
 Run bittorrent_backend from /usbhd0/1 with debugboard opened.
-Run bittorrent_frontend from /usbhd0/1 for UI.
+Run bittorrent_frontend_new from /usbhd0/1 for UI.
