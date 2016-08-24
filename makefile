@@ -7,7 +7,7 @@ all: torrent.obj bittorrent_backend bittorrent_frontend_new
 torrent.obj : torrent.asm torrent.inc tracker.asm peer.asm bencode.asm percent.asm
 	fasm $< $@
 
-bittorrent_backend: bittorrent_backend.asm torrent.inc
+bittorrent_backend: bittorrent_backend.asm torrent.inc torrent_errors.inc
 	fasm $< $@
 
 bittorrent_frontend_new: bittorrent_frontend_new.asm
