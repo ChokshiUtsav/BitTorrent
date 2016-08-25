@@ -160,7 +160,7 @@ START:
 
     .torrent_add:
             stdcall backend_actions_add, esi, send_buffer
-            mcall   send, [socketnum2], send_buffer, eax
+            mcall   send, [socketnum2], send_buffer
             mcall   close, [socketnum2]
             jmp     .accept_connection
 
@@ -172,7 +172,9 @@ START:
 
     .torrent_show_all: 
             stdcall backend_actions_show_all , send_buffer
-            mcall   send, [socketnum2], send_buffer, eax       
+            DEBUGF 2, "INFO : str %s\n", send_buffer
+            DEBUGF 2, "INFO : len %d\n", eax
+            mcall   send, [socketnum2], send_buffer      
             mcall   close, [socketnum2]
             jmp     .accept_connection
 
@@ -265,10 +267,10 @@ torrent_add_suc      db 'Torrent added successfully', 0
 ;Data for connection
 socketnum            dd ?
 socketnum2           dd ?
-recv_buffer          rb BUFFERSIZE
-.length               = BUFFERSIZE
-send_buffer          rb BUFFERSIZE
-.length               = BUFFERSIZE
+recv_buffer          rb 1500
+.length               = 1500
+send_buffer          rb 1500
+.length               = 1500
 length_of_msg        dd ?
 type_of_msg          db ?
 
