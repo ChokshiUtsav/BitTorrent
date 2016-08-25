@@ -78,6 +78,7 @@ START:
             invoke  con_write_asciiz, download_cmd_str
             invoke  con_write_asciiz, show_cmd_str
             invoke  con_write_asciiz, show_all_cmd_str
+            invoke  con_write_asciiz, show_menu_str
 
     .input_loop:        
             ;user input
@@ -98,6 +99,12 @@ START:
             cmp     eax, -1
             je      @f
             stdcall torrent_show_all
+            jmp     .input_loop
+
+        @@: stdcall compare_strs, params, show_menu_str
+            cmp     eax, -1
+            je      @f
+            stdcall show_menu
             jmp     .input_loop
 
         @@: invoke  con_write_asciiz, Invalid_Cmd_Str
@@ -212,7 +219,6 @@ proc  connect_backend
 
              ;receving message
         @@:  mcall   recv, [socketnum], recv_buffer, 1500, 0
-             DEBUGF 2, "INFO : size %d\n", eax
              cmp     eax, -1
              jne     .quit
              DEBUGF 3, "ERROR : recv %d\n",ebx
@@ -320,6 +326,19 @@ proc torrent_show_all
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Prints list of available commands
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+proc  show_menu
+            invoke  con_write_asciiz, avl_cmd_str
+            invoke  con_write_asciiz, download_cmd_str
+            invoke  con_write_asciiz, show_cmd_str
+            invoke  con_write_asciiz, show_all_cmd_str
+            invoke  con_write_asciiz, show_menu_str 
+            ret
+endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;Import Area;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -354,6 +373,7 @@ avl_cmd_str         db      'Following commands are available :',10,0
 download_cmd_str    db      'download_torrent',10,0
 show_cmd_str        db      'show_torrent',10,0
 show_all_cmd_str    db      'show_all_torrent',10,0
+show_menu_str       db      'show_all_cmd',10,0
 torrent_file_str    db      '>>>>Enter torrent file location :', 10,0
 download_loc_str    db      '>>>>Enter download location :', 10,0
 connect_backend_str db      '>>>>Connecting to backend...',10,0
