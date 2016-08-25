@@ -103,6 +103,23 @@ proc  num_to_str _num, _dest
             ret
 endp
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Converts string to number
+;Input   : source string pointer
+;Output  : eax = number
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+proc  str_to_num _src
+            
+            push ebx ecx edx esi edi
+
+
+
+
+            pop  edi esi edx ecx ebx
+            ret
+endp 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Desc    : adds new torrent
 ;Input   : message from frontend [torrent-file loc + download loc], pointer to send buffer  
@@ -197,7 +214,16 @@ endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 proc backend_actions_show _msg, _sendbuffer
+            
+            DEBUGF 2, "INFO : In backend_actions.torrent_show\n"
+            
+            push    ebx ecx edx esi edi
 
+
+
+
+            pop     edi esi edx ecx ebx
+            ret 
 endp
 
 
@@ -252,12 +278,37 @@ proc backend_actions_show_all  _sendbuffer
             ;prints torrent-id message
             stdcall   copy_strs, edi, Torrent_ID_Msg
             add       edi, eax
-            dec       edi
 
             ;prints torrent-id
             mov     eax, [esi + torrent_info.torrent_id]
             stdcall num_to_str, eax, edi
             add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints torrent-id message
+            stdcall   copy_strs, edi, Torrent_State_Msg
+            add       edi, eax
+
+            ;prints torrent-state
+            cmp     [esi + torrent_info.torrent_state], TORRENT_STATE_NEW
+            jne     @f
+            stdcall copy_strs, edi, Torrent_New_State_Msg
+            jmp     .next
+
+    @@:     cmp     [esi + torrent_info.torrent_state], TORRENT_STATE_RUNNING
+            jne     @f
+            stdcall copy_strs, edi, Torrent_Running_State_Msg
+            jmp     .next
+
+    @@:     cmp     [esi + torrent_info.torrent_state], TORRENT_STATE_NOT_ACTIVE
+            jne     @f
+            stdcall copy_strs, edi, Torrent_Not_Active_State_Msg
+            jmp     .next
+
+            stdcall copy_strs, edi, Torrent_Paused_State_Msg        
+
+    .next:  add     edi, eax
             mov     byte[edi], 0x0A
             inc     edi         
 
