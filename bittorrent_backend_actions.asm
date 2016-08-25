@@ -218,21 +218,20 @@ proc backend_actions_show_all  _sendbuffer
             je      .no_torrent
 
             mov     ecx, 0
-        
-    .loop:  cmp     ecx, [num_torrents]
-            je      .quit
-            mov     esi, ecx
-            imul    esi, sizeof.torrent_info
-            add     esi, [torrent_arr]
-            
-            ;prepares message
-            
-            ;prints available torrent message
             mov      edi, [_sendbuffer]
+
+            ;prepares message
+            ;prints available torrent message
             stdcall  copy_strs, edi, Avl_Torrents_Msg
             add      edi, eax
             mov      byte[edi], 0x0A
             inc      edi
+        
+    .loop:  cmp     ecx, [num_torrents]
+            je      .calc_length
+            mov     esi, ecx
+            imul    esi, sizeof.torrent_info
+            add     esi, [torrent_arr]
 
             ;prints torrent-index message
             stdcall  copy_strs, edi, Torrent_Index_Msg
@@ -265,25 +264,31 @@ proc backend_actions_show_all  _sendbuffer
             ;prints name message
             stdcall   copy_strs, edi, Torrent_Name_Msg
             add       edi, eax
-            dec       edi
 
             ;prints name
             mov     eax, [esi + torrent_info.torrent_pointer]
             lea     esi, [eax + torrent.name]
+            DEBUGF 2, "INFO : Name %s\n", esi
             stdcall copy_strs, edi, esi
             add     edi, eax
             mov     byte[edi], 0x0A
             inc     edi
-            mov     byte[edi], 0x00
+            mov     byte[edi], 0x0A
+            inc     edi
 
-            mov     edi, [_sendbuffer]
-            DEBUGF 2, "INFO : String %s\n", edi
-            jmp    .quit            
             inc     ecx
             jmp     .loop
 
+    .calc_length:
+            mov     byte[edi], 0x00
+            mov     eax, edi
+            sub     eax, [_sendbuffer]
+            jmp     .quit
+
     .no_torrent:
             stdcall  copy_strs, [_sendbuffer], No_Torrent_Added_Str
+            jmp      .quit
+
     .quit:  
             pop     edi esi edx ecx ebx
             ret
