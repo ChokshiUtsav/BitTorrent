@@ -195,7 +195,7 @@ proc  connect_backend
              DEBUGF 3, "ERROR : Open socket : %d\n",ebx
              jmp     .error
 
-            ;Connecting with tcp-server
+             ;Connecting with tcp-server
         @@:  mov     [socketnum], eax
              mcall   connect, [socketnum], sockaddr_server, sockaddr_server.length
              cmp     eax, -1
@@ -204,16 +204,18 @@ proc  connect_backend
              jmp     .error
 
              ;sending message
-        @@:  mcall   send, [socketnum], send_buffer, send_msg_len
+        @@:  invoke  con_write_asciiz, connected_backend_str
+             mcall   send, [socketnum], send_buffer, send_msg_len
              cmp     eax, -1
              jnz     @f
              DEBUGF 3, "ERROR: send %d\n",ebx
              jmp     .error
 
              ;receving message
-        @@:  mcall   recv, [socketnum], recv_buffer, BUFFERSIZE, 0
+        @@:  mcall   recv, [socketnum], recv_buffer, 1500, 0
+             DEBUGF 2, "INFO : size %d\n", eax
              cmp     eax, -1
-             jnz     .quit
+             jne     .quit
              DEBUGF 3, "ERROR : recv %d\n",ebx
              jmp     .error  
 
@@ -312,7 +314,8 @@ proc torrent_show_all
             invoke  con_write_asciiz, problem_backend_str
             jmp     .quit
 
-    @@:     invoke  con_write_asciiz, recv_buffer   
+    @@:     DEBUGF 2, "INFO : %s\n", recv_buffer
+            invoke  con_write_asciiz, recv_buffer   
 
     .quit:  pop     edi esi edx ecx ebx
             ret
@@ -355,6 +358,7 @@ show_all_cmd_str    db      'show_all_torrent',10,0
 torrent_file_str    db      '>>>>Enter torrent file location :', 10,0
 download_loc_str    db      '>>>>Enter download location :', 10,0
 connect_backend_str db      '>>>>Connecting to backend...',10,0
+connected_backend_str db    '>>>>Connected and waiting...',10,0
 problem_backend_str db      '>>>>Problem connecting with backend...',10,0
 prompt_str          db       10,'>> ',0
 Invalid_Cmd_Str     db      'Torrent command not supported', 10, 0
@@ -379,8 +383,8 @@ send_msg_len            dd ?
 
 I_END:
 
-send_buffer         rb      BUFFERSIZE
-recv_buffer         rb      BUFFERSIZE
+send_buffer         rb      1500
+recv_buffer         rb      1500
 params              rb      1024
 
 E_END:
