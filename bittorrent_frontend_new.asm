@@ -50,7 +50,6 @@ include 'includes/debug-fdo.inc'
 include 'includes/dll.inc'
 include 'includes/libio.inc'
 include 'torrent_actions.inc'
-include 'bittorrent_frontend.inc'
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;Code Area;;;;;;;;;;;;;;;;;;;
