@@ -46,3 +46,5 @@ Why ? Every tracker server that has scrape URL, also has, announce URL. So this 
 [Read more about it here](http://bittorrent.org/beps/bep_0012.html)
 
 Why? announce-list is an optional parameter. It is part of extension of Bittorrent Protocol (BEP12).
+
+### (8) Web seeding/ HTTP Seeding

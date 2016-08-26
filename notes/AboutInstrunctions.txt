@@ -1,3 +1,6 @@
+Instructions :
+--------------
+
 General:
 Usually first is the destination operand and second is the source operand. 
 [mnemonic dest, source ]
@@ -30,3 +33,9 @@ It performs a signed multiplication operation. This instruction has three variat
 
 7) lea :
 lea transfers the offset of the source operand (rather than its value) to the destination operand. The source operand must be a memory operand, and the destination operand must be a general register. 
+
+
+Directives:
+------------
+1) align :
+align directive aligns code or data to the specified boundary. It should be followed by a numerical expression specifying the number of bytes, to the multiply of which the current address has to be aligned. The boundary value has to be the power of two.
