@@ -74,12 +74,8 @@ START:
     @@:     invoke  con_start, 1
             invoke  con_init, 80, 25, 80, 25, title
             invoke  con_write_asciiz, welcome_str
-            invoke  con_write_asciiz, avl_cmd_str
-            invoke  con_write_asciiz, download_cmd_str
-            invoke  con_write_asciiz, show_cmd_str
-            invoke  con_write_asciiz, show_all_cmd_str
-            invoke  con_write_asciiz, show_menu_str
-
+            stdcall show_menu
+            
     .input_loop:        
             ;user input
             invoke  con_write_asciiz, prompt_str
@@ -94,6 +90,8 @@ START:
         @@: stdcall compare_strs, params, show_cmd_str
             cmp     eax, -1
             je      @f
+            stdcall torrent_show
+            jmp     .input_loop
 
         @@: stdcall compare_strs, params, show_all_cmd_str
             cmp     eax, -1
@@ -297,6 +295,54 @@ endp
 ;Outcome : It prints on the console all added torrents
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+proc torrent_show
+
+            push    ebx ecx edx esi edi
+
+            ;prepares message
+            mov     eax, 0
+            mov     ecx, 0
+            mov     edi, send_buffer
+            stosd
+            mov     eax, TORRENT_ACTION_SHOW
+            stosb
+
+            ;asks user for torrent id
+            invoke  con_write_asciiz, torrent_id_str
+            invoke  con_gets, params, 1024
+            stdcall copy_strs, params, edi
+            add     ecx, eax
+            add     edi, eax
+            mov     byte[edi], '#'
+            inc     ecx
+            inc     edi
+
+            ;loads message length
+            mov     edi, send_buffer
+            mov     eax, ecx
+            stosd
+
+            ;connecting to backend
+            invoke  con_write_asciiz, connect_backend_str
+            add     ecx, 5
+            mov     [send_msg_len], ecx
+            stdcall connect_backend
+            cmp     eax, -1
+            jne     @f
+            invoke  con_write_asciiz, problem_backend_str
+            jmp     .quit
+
+    @@:     invoke  con_write_asciiz, recv_buffer   
+
+    .quit:  pop  edi esi edx ecx ebx
+            ret
+endp
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Desc    : Handles torrent show all command
+;Outcome : It prints on the console all added torrents
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 proc torrent_show_all
 
             push    ebx ecx edx esi edi
@@ -319,8 +365,7 @@ proc torrent_show_all
             invoke  con_write_asciiz, problem_backend_str
             jmp     .quit
 
-    @@:     DEBUGF 2, "INFO : %s\n", recv_buffer
-            invoke  con_write_asciiz, recv_buffer   
+    @@:     invoke  con_write_asciiz, recv_buffer   
 
     .quit:  pop     edi esi edx ecx ebx
             ret
@@ -381,6 +426,7 @@ connected_backend_str db    '>>>>Connected and waiting...',10,0
 problem_backend_str db      '>>>>Problem connecting with backend...',10,0
 prompt_str          db       10,'>> ',0
 Invalid_Cmd_Str     db      'Torrent command not supported', 10, 0
+torrent_id_str      db      '>>>>Enter torrent id : ', 10, 0
 
 ;Data for connecting with backend
 sockaddr_server:  
