@@ -65,7 +65,7 @@ proc  num_to_str _num, _dest
             push ebx ecx edx esi edi
 
             locals
-                temp_str rb 8
+                temp_str rb 16
             endl
 
             mov  ebx, 10
@@ -104,7 +104,7 @@ proc  num_to_str _num, _dest
 endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Desc    : Converts string to number
+;Desc    : Converts null-terminated string to number
 ;Input   : source string pointer
 ;Output  : eax = number
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,9 +113,22 @@ proc  str_to_num _src
             
             push ebx ecx edx esi edi
 
+            mov  esi, [_src]
+            mov  ecx, 0
+                    
+    .loop : cmp  byte[esi], 0x00
+            je   .quit
+            cmp  byte[esi], 0x0A
+            je   .quit
+            cmp  byte[esi], '#'
+            je   .quit
+            lodsb
+            sub   eax, '0'
+            imul  ecx, 10
+            add   ecx, eax
+            jmp  .loop
 
-
-
+    .quit:  mov  eax, ecx
             pop  edi esi edx ecx ebx
             ret
 endp 
@@ -219,11 +232,116 @@ proc backend_actions_show _msg, _sendbuffer
             
             push    ebx ecx edx esi edi
 
+            cmp     [num_torrents], 0
+            je      .no_torrent
 
+            stdcall  str_to_num, [_msg] 
+            mov      ebx, eax
+            mov      ecx, 0
 
+    .loop:  cmp     ecx, [num_torrents]
+            je      .no_torrent
+            mov     esi, ecx
+            imul    esi, sizeof.torrent_info
+            add     esi, [torrent_arr]
+            cmp     ebx, [esi + torrent_info.torrent_id]
+            jne     .next
 
+            ;prints torrent details msg
+            mov     edi, [_sendbuffer]
+            stdcall copy_strs, edi, Torrent_Details_Msg
+            add     edi, eax
+            stdcall copy_strs, edi, Seperator_Str
+            add     edi, eax
+
+            mov     ebx, [esi + torrent_info.torrent_pointer]
+
+            ;prints name msg
+            stdcall copy_strs, edi, Torrent_Name_Msg
+            add     edi, eax
+            lea     esi, [ebx + torrent.name]
+            stdcall copy_strs, edi, esi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints files msg
+            stdcall copy_strs, edi, Torrent_Files_Msg
+            add     edi, eax
+            mov     eax, [ebx + torrent.files_cnt]
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints pieces msg
+            stdcall copy_strs, edi, Torrent_Pieces_Msg
+            add     edi, eax
+            mov     eax, [ebx + torrent.pieces_cnt]
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints downloaded msg
+            stdcall copy_strs, edi, Torrent_Downloaded_Msg
+            add     edi, eax
+            mov     eax, [ebx + torrent.downloaded]
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints uploaded msg
+            stdcall copy_strs, edi, Torrent_Uploaded_Msg
+            add     edi, eax
+            mov     eax, [ebx + torrent.uploaded]
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints tracker msg
+            stdcall copy_strs, edi, Torrent_Tracker_Msg
+            add     edi, eax
+            mov     eax, [ebx + torrent.trackers]
+            lea     esi, [eax + tracker.announce]
+            stdcall copy_strs, edi, esi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints peers msg
+            stdcall copy_strs, edi, Torrent_Peers_Msg
+            add     edi, eax
+            mov     eax, [ebx + torrent.peers_cnt]
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            ;prints total size msg
+            stdcall copy_strs, edi, Torrent_Size_Msg
+            add     edi, eax
+            mov     ecx, [ebx + torrent.pieces_cnt]
+            mov     eax, [ebx + torrent.piece_length]
+            imul    eax, ecx
+            stdcall num_to_str, eax, edi
+            add     edi, eax
+            mov     byte[edi], 0x0A
+            inc     edi
+
+            mov     byte[edi], 0x00         
+            jmp     .quit           
+
+    .next:  inc     ecx
+            jmp     .loop
+
+    .no_torrent:
+            stdcall  copy_strs, [_sendbuffer], No_Matching_Torrent_Str                              
+    .quit:  
             pop     edi esi edx ecx ebx
-            ret 
+            ret
 endp
 
 
@@ -319,7 +437,6 @@ proc backend_actions_show_all  _sendbuffer
             ;prints name
             mov     eax, [esi + torrent_info.torrent_pointer]
             lea     esi, [eax + torrent.name]
-            DEBUGF 2, "INFO : Name %s\n", esi
             stdcall copy_strs, edi, esi
             add     edi, eax
             mov     byte[edi], 0x0A

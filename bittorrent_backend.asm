@@ -166,14 +166,12 @@ START:
 
     .torrent_show:
             stdcall backend_actions_show, esi, send_buffer
-            mcall   send, [socketnum2], send_buffer, eax
+            mcall   send, [socketnum2], send_buffer
             mcall   close, [socketnum2]
             jmp     .accept_connection
 
     .torrent_show_all: 
             stdcall backend_actions_show_all , send_buffer
-            DEBUGF 2, "INFO : str %s\n", send_buffer
-            DEBUGF 2, "INFO : len %d\n", eax
             mcall   send, [socketnum2], send_buffer      
             mcall   close, [socketnum2]
             jmp     .accept_connection
