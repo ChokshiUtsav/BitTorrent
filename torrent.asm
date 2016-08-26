@@ -37,6 +37,7 @@ include 'includes/libio.inc'
 include 'includes/debug-fdo.inc'
 include 'includes/struct.inc'
 include 'torrent.inc'
+include 'torrent_errors.inc'
 include 'includes/libcrash.inc'
 include 'includes/network.inc'
 include 'includes/http.inc'
@@ -114,6 +115,7 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             test    eax, eax
             jnz     @f
             DEBUGF 3, "ERROR : Not enough memory for ipc buffer\n"
+            mov     ebx, BT_ERROR_NOT_ENOUGH_MEMORY
             jmp     .error
 
     @@:     mov     [ebx + torrent.ipc_buf], eax
@@ -128,6 +130,7 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             test    eax, eax
             jnz     @f
             DEBUGF 3, "ERROR: Not enough memory for trackers\n"
+            mov     ebx, BT_ERROR_NOT_ENOUGH_MEMORY
             jmp     .error
     
     @@:     mov     [ebx + torrent.trackers], eax
@@ -139,6 +142,7 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             test    eax, eax
             jnz     @f
             DEBUGF 3,'ERROR: Not enough memory for peers\n'
+            mov     ebx, BT_ERROR_NOT_ENOUGH_MEMORY
             jmp     .error
 
     @@:     mov     [ebx + torrent.peers], eax
@@ -158,6 +162,7 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             cmp     eax, -1
             jne     .bencoding_done
             DEBUGF 3,"ERROR : Problem loading file\n"
+            mov     ebx, BT_ERROR_INVALID_TORRENT_FILE
             jmp     .error
 
     .bencoding_done:
@@ -167,6 +172,7 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             cmp     eax, -1
             jne     .file_space_alloc_done        
             DEBUGF 3, "ERROR : Problem allocating file space\n"
+            mov     ebx, BT_ERROR_INSUFF_HD_SPACE
             jmp     .error
 
     .file_space_alloc_done:
@@ -174,6 +180,7 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             cmp     eax, -1
             jne     .quit
             DEBUGF 3, "ERROR : Insufficient memory for torrent downloading\n"
+            mov     ebx, BT_ERROR_NOT_ENOUGH_MEMORY
             jmp     .error
 
     .magnet:
@@ -182,12 +189,12 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
 
     .error: DEBUGF 3, "ERROR : Procedure ended with error\n"
             mov     eax, -1
-            pop     edi esi ebx
+            pop     edi esi
             ret
 
     .quit:  DEBUGF 2, "INFO : Procedure ended successfully\n"
             mov     eax, ebx
-            pop     edi esi ebx 
+            pop     edi esi 
             ret
 endp
 

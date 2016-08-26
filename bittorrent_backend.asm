@@ -215,6 +215,12 @@ START:
             mcall   -1
 
 THREAD2_START:
+
+            ;loop over all torrent
+            ;for all torrent in new state call torrent.start
+            ;for all torrent in active state call torrent.resume
+            
+
             DEBUGF 2, "INFO : I am at thread 2\n"
             mcall    -1    
 
