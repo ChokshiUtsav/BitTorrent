@@ -30,3 +30,4 @@ Max_Torrent_Exceed_Str    db 'Maximum number of torrents, that can be processed,
 Torrent_Add_Suc_Str           db 'Torrent has been added successfully ',10,0
 Invalid_Cmd_Str           	  db 'Torrent command not supported', 10, 0
 No_Torrent_Added_Str          db 'No torrent is added yet', 10, 0
+No_Matching_Torrent_Str       db 'No torrent with given id found', 10, 0

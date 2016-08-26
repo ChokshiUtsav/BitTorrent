@@ -30,6 +30,9 @@ TORRENT_ACTION_QUIT     	= 7
 
 ;Torrent states
 TORRENT_STATE_NEW			= 1
+TORRENT_STATE_RUNNING		= 2
+TORRENT_STATE_NOT_ACTIVE	= 3
+TORRENT_STATE_PAUSED        = 4
 
 struct torrent_info
 	torrent_pointer     dd ?  ;pointer to torrent struct
@@ -38,8 +41,23 @@ struct torrent_info
 ends
 
 ;Messages
-Avl_Torrents_Msg        db 'Following Torrents have been added :',0
-Torrent_Index_Msg       db 'Torrent :',0
-Seperator_Str			db '--------------',0
-Torrent_ID_Msg          db 'ID : ',0
-Torrent_Name_Msg        db 'Name : ', 0
+Avl_Torrents_Msg              db '>>>>Following Torrents have been added :',0
+Torrent_Index_Msg             db '>>>>Torrent :',0
+Seperator_Str			      db '    ----------',10,0
+Torrent_ID_Msg                db '    ID     : ',0
+Torrent_Name_Msg              db '    Name   : ', 0
+Torrent_State_Msg		      db '    Status : ', 0
+Torrent_New_State_Msg	      db 'Added but Not Started', 0
+Torrent_Running_State_Msg     db 'Active and Running', 0
+Torrent_Not_Active_State_Msg  db 'Not active', 0
+Torrent_Paused_State_Msg      db 'Paused', 0
+Torrent_Details_Msg           db '>>>>Torrent Details : ',10,0
+Seperator_2_Str				  db '    -------------------'
+Torrent_Downloaded_Msg        db '    Downloaded : ', 0
+Torrent_Uploaded_Msg          db '    Uploaded : ', 0
+Torrent_Pieces_Msg            db '    Number of pieces : ', 0
+Torrent_Files_Msg             db '    Number of files : ', 0
+Torrent_Peers_Msg             db '    Number of peers : ', 0
+Torrent_Size_Msg              db '    Total size of torrent : ',0
+Torrent_Hash_Msg              db '    Info Hash : ', 0
+Torrent_Tracker_Msg           db '    Tracker URL : ',0

@@ -161,6 +161,8 @@ proc torrent.new _bt_new_type, _src, _downloadlocation
             jmp     .error
 
     .bencoding_done:
+            lea     esi, [ebx + torrent.name]
+            DEBUGF 2, "INFO : name %s\n", esi
             stdcall torrent._.allocate_file_space, ebx, [_downloadlocation] 
             cmp     eax, -1
             jne     .file_space_alloc_done        
