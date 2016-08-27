@@ -25,8 +25,8 @@ MAX_PEERS_TOTAL       = 200
 NUM_PIECES_IN_MEM     = 10
 
 RECV_TIMEOUT       = 1          ;in seconds
-PEER_TIMEOUT       = 10         ;in seconds
-KEEPALIVE_TIME     = 120       ;in seconds (= 2 mins)
+PEER_TIMEOUT       = 3600       ;in seconds
+KEEPALIVE_TIME     = 120        ;in seconds (= 2 mins)
 TORRENT_TIMEOUT    = 3600       ;in seconds
 
 BT_TRACKER_PROTOCOL_TCP  = 0    ; bep_0003: The BitTorrent Protocol Specification
